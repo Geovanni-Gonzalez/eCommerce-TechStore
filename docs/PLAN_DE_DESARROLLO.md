@@ -1,5 +1,8 @@
 # Plan de desarrollo — eCommerce TechStore
 
+> ⚠️ **PLAN HISTÓRICO:** Este calendario de 12 semanas ya no es el plan de entrega. La entrega está fijada para el **19 de noviembre de 2026**. Consultar el [plan acelerado vigente](./PLAN_ENTREGA_19_NOV_2026.md). Las iteraciones S01–S12 de los Issues son estimaciones originales y deben replantearse.
+
+
 **Estado:** propuesta inicial pendiente de refinamiento con el equipo.  
 **Equipo:** Geovanni González Aguilar y Neyshell Blear Obregón.  
 **Enfoque:** Scrumban ligero, iteraciones semanales, arquitectura monolítica modular.
