@@ -1,79 +1,70 @@
-# Plan de entrega acelerada — eCommerce TechStore
-**Fecha límite fija:** jueves **19 de noviembre de 2026** (Costa Rica).
-**Creación:** 9 de noviembre de 2026. **Equipo:** Geovanni González Aguilar y Neyshell Blear Obregón.
-**Estado:** propuesta urgente, ajustar alcance según dedicación y estado real del código.
+# Plan vigente — Prototipo eCommerce TechStore
+**Fecha de corte:** 14 de noviembre de 2026. **Entrega:** jueves **19 de noviembre de 2026** (Costa Rica).  
+**Equipo:** Geovanni González Aguilar y Neyshell Blear Obregón.  
+**Alcance confirmado:** un **prototipo ejecutable que demuestre las funcionalidades principales**, NO una plataforma comercial lista para producción.
 
-> Este plan **reemplaza** el calendario de 12 semanas. Las 64 incidencias BKL originales siguen siendo el backlog de producto, pero **NO** son compromisos para el 19 de noviembre. Las etiquetas `delivery:must` y `delivery:stretch` distinguen el trabajo de entrega; las indicaciones S01-S12 dentro de las incidencias son históricas.
+> Este es el plan operativo vigente. Sustituye al plan histórico de 12 semanas y al cronograma acelerado anterior. Los campos S01–S12 de los Issues corresponden a la planificación original; no son fechas de entrega.
 
-## Restricción de capacidad
-El plan original tenía 340 h estimadas. Para ejecutarlo en diez días se necesitarían ~17 h por persona por día: **no es realista**.
-Presupuestar aproximadamente **4 a 6 h por persona y día de desarrollo** durante nueve días (10–18 nov.) supone 72–108 horas conjuntas. Ajustar a la disponibilidad real.
-**No comenzar nuevas funciones durante los últimos dos días si el flujo principal todavía falla.**
+## Recorrido obligatorio de la demostración
+1. Un visitante consulta el **catálogo público** de accesorios tecnológicos, con nombre, imagen, precio en colones y detalle.
+2. Un **cliente se registra o inicia sesión** y no puede acceder a áreas administrativas.
+3. Agrega artículos al **carrito**, cambia cantidades y ve subtotales.
+4. Indica una **dirección de entrega**, revisa los importes calculados en el backend y confirma.
+5. El sistema almacena un **Pedido y DetallePedido en PostgreSQL**, devuelve un identificador y muestra su estado.
+6. Se presenta **pago simulado — solo demostración** sin capturar datos de tarjeta ni realizar cobros.
+7. Se muestra una vista mínima de **administración** para consultar productos y, si hay tiempo, editarlos.
+8. Se demuestra la ejecución desde README y evidencia básica de pruebas.
 
-## Objetivo verificable de entrega
-Poder demostrar en una computadora una aplicación local integrada con:
-1. Catálogo público con productos precargados y detalle.
-2. Registro/autenticación mínima para cliente y cuenta admin de pruebas; rutas privadas protegidas.
-3. Carrito con cantidades y subtotal.
-4. Checkout que crea un **pedido de demostración** con datos de entrega y monto confirmado por el servidor.
-5. Historial/estado básico del pedido **si alcanza el tiempo**.
-6. Gestión básica de productos en administración **si alcanza el tiempo**.
-7. Código y esquema SQL versionados, instrucciones de arranque y evidencia de pruebas básicas.
+**Criterio de aceptación general:** crear un pedido persistente desde la interfaz sin modificar datos manualmente en la base. La simulación financiera debe identificarse de forma visible.
 
-**Pagos:** la arquitectura contempla una pasarela externa, pero no se garantiza integración real en diez días. Solo utilizar sandbox si se confirma proveedor y credenciales desde el 10–11 nov. Si no, mostrar claramente `pago simulado (solo demostración)` y **nunca** afirmar que se hizo un cobro, verificar un pago real o habilitar ventas reales. Las pruebas no deben usar tarjetas ni dinero real.
+## Alcance mínimo / adicional / excluido
+| Clasificación | Funcionalidades |
+|---|---|
+| **Obligatorio** | Aplicación local integrada (Next.js, Spring Boot, PostgreSQL), catálogo, autenticación básica, carrito, formulario de entrega, total y pedido persistido, confirmación y README |
+| **Prioritario si queda tiempo** | CRUD básico admin, historial de pedidos, búsqueda y filtros |
+| **Fuera de esta entrega** | Cobros reales, webhooks, reservas con caducidad, integración real de transportistas, reseñas, notificaciones, carga y alta disponibilidad |
 
-**Inventario:** priorizar que cantidades negativas y pedidos sin stock sean rechazados. Bloqueos, reservas temporales y conciliación de pagos quedan pendientes si no hay tiempo; documentar riesgos y limitaciones. El checkout de demostración no equivale a un sistema listo para producción.
+**Seguridad básica:** contraseñas con hash, validación en servidor, autorización de rutas privadas, ninguna credencial versionada.  
+**Inventario:** cantidades positivas y rechazo de solicitud si supera las existencias; la concurrencia avanzada queda documentada como limitación.  
+**Pagos:** simulación sin dinero real; no afirmar que el prototipo ejecuta cobros ni ventas reales.
 
-## Alcance que se difiere salvo que sobre tiempo
-Integración de transportista, reseñas, notificaciones, favoritos, optimizaciones avanzadas, despliegue público, alta disponibilidad, auditoría extensa, pasarela productiva, sistema robusto de reintentos y reservas con caducidad.
-No prometer WCAG completa, rendimiento objetivo ni cumplimiento normativo integral sin pruebas.
-
-## Calendario por día
-| Fecha | Geovanni (responsable sugerido) | Neyshell (responsable sugerida) | Puerta de salida |
+## Calendario operativo desde el 14 de noviembre
+| Fecha | Geovanni — backend / integración | Neyshell — frontend / presentación | Criterio de cierre |
 |---|---|---|---|
-| 10 nov (mar) | Configurar Spring Boot, PostgreSQL, migraciones y API base | Next.js, diseño mínimo y estructura de rutas | Ambos proyectos arrancan localmente |
-| 11 nov (mié) | API de catálogo con productos de ejemplo | Catálogo y ficha con datos reales de API | Catálogo visible desde navegador |
-| 12 nov (jue) | Registro, autenticación y rol admin | Formularios de login/registro y estados | Usuario puede entrar y cerrar sesión |
-| 13 nov (vie) | API de productos administrable si hay capacidad | Panel admin simple si hay capacidad | Catálogo de punta a punta estable |
-| 14 nov (sáb) | API de carrito, validación de cantidades | Carrito persistente y resumen | Carrito operativo |
-| 15 nov (dom) | Pedido, detalles, monto calculado por backend | Checkout y captura de datos de entrega | Se crea pedido demostrable |
-| 16 nov (lun) | Stock mínimo y pago sandbox solo si es viable; si no, flujo simulado explícito | Confirmación, error y estado del pedido | **Demo completa de compra** |
-| 17 nov (mar) | Pruebas de API, autenticación y defectos críticos | Pruebas manuales/E2E, móvil y correcciones | Sin bloqueadores del flujo principal |
-| 18 nov (mié) | Congelar funcionalidades, preparar release y respaldo local | README, capturas/video, guía de demo y revisión final | Versión entregable |
-| 19 nov (jue) | **Entrega:** verificar repositorio y archivos finales | **Entrega:** validar presentación y evidencia | Presentado y entregado dentro del plazo |
+| **Sáb 14** | Verificar estado real del repositorio, arrancar Spring/PostgreSQL, modelo y API de productos | Arrancar Next.js, catálogo y ficha con datos de API | Navegador consulta productos de backend |
+| **Dom 15** | Registro, autenticación, controles de roles y carrito API | Login, registro y carrito funcional | Cliente autenticado agrega/modifica artículos |
+| **Lun 16** | Crear pedidos, detalles, dirección, validaciones y totales backend | Checkout y pantalla de confirmación/pago simulado | Se guarda pedido y se obtiene su identificador |
+| **Mar 17** | Corregir errores del flujo, preparar administración si alcanza | Admin mínima, estados de pedidos y pruebas manuales | Demo completa repetible sin intervención técnica |
+| **Mié 18** | Congelar funcionalidades, smoke tests, README y versión etiquetada | Capturas, guion de demo, prueba desde instalación limpia | Paquete entregable listo |
+| **Jue 19** | Verificación de entrega, demo técnica | Revisión de evidencias y presentación | **Entrega** |
 
-## Puntos de control y reducción de alcance
-- Si el **11 nov.** no funcionan Next, Spring y PostgreSQL integrados, suspender admin y pagos externos hasta resolver la base.
-- Si el **13 nov.** no funciona catálogo + login, terminar esos flujos antes de iniciar carrito.
-- Si el **16 nov.** no hay checkout funcional, eliminar extras y concentrarse en una demo coherente.
-- **18 nov.** congelar funcionalidades: solo corrección de fallos, pruebas y preparación de entrega.
+Las responsabilidades son sugeridas y deben ajustarse a disponibilidad real. Al quedar cinco días, trabajar en paralelo sobre contratos API acordados. Evitar desarrollar funciones que no se puedan integrar antes del 18.
 
-## Backlog para esta entrega
-Los asuntos con `delivery:must` forman el núcleo de implementación **prioritario**, no una garantía de completar cada issue tal como estaba dimensionado en el plan de 12 semanas. Reducir el trabajo y los criterios de aceptación mediante refinamiento explícito cuando sea necesario.
-Los asuntos `delivery:stretch` se intentan solo una vez que el núcleo pasa pruebas.
-El resto de las 64 tareas es posentrega o pertenece a la visión del producto.
+## Priorización de GitHub Issues
+Las etiquetas `delivery:must` identifican trabajo del flujo principal; `delivery:stretch` indica extensiones. Los Issues existentes conservan títulos y estimaciones de la versión completa. Para esta entrega se permite realizar **versiones reducidas y documentadas** de esas tareas sin afirmar que cumplen su alcance de producción.
 
-## Reglas de trabajo
-- Máximo una tarea en progreso por integrante.
-- Integración diaria en `main` mediante PR pequeños revisados por el compañero.
-- Todos los secretos en variables de entorno; nunca en commits.
-- Verificar cada día que una persona nueva pueda ejecutar el proyecto siguiendo README.
-- Actualización breve a las 20:00: hecho, siguiente paso y bloqueos.
-- Documentar expresamente qué funciones son prototipo, simulación o pendientes.
+Especialmente:
+- **BKL-031**: dirección simple de entrega (sin integración geográfica).
+- **BKL-032**: subtotal + costo de envío fijo configurable y total en servidor; no asumir cálculo fiscal definitivo.
+- **BKL-033**: crear `Pedido` y `DetallePedido` y validar stock, **sin** prometer reservas temporales robustas.
+- **BKL-023/024**: administración sencilla opcional para la demo; posponer si el checkout falla.
+- **BKL-042/043**: historial opcional, posterior al guardado de pedidos.
 
-## Decisiones pendientes para el equipo (10 de noviembre)
-1. Horas reales disponibles por día.
-2. Qué exactamente debe entregarse (código ejecutable, vídeo, documentación, presentación).
-3. Identidad de GitHub de Neyshell para asignar asuntos.
-4. Si existe una pasarela de pago sandbox viable en Costa Rica.
-5. Si se trabajará fin de semana: el cronograma supone que sí.
+## Puertas de decisión
+- **15 nov. por la noche:** si faltan frontend/backend integrados, priorizar catálogo y un único flujo autenticado.
+- **16 nov. por la noche:** si no se crea el pedido, detener funciones adicionales y corregir el checkout.
+- **17 nov. por la noche:** no comenzar funciones nuevas, solo correcciones y documentación.
+- **18 nov.:** congelar versión, ejecutar demostración integral y preparar entrega.
 
-## Hitos
-- **11 nov.:** catálogo conectado.
-- **13 nov.:** identidad básica y catálogo listos.
-- **16 nov.:** demostración integrada de compra sin cobro real salvo sandbox verificado.
-- **18 nov.:** versión congelada y materiales listos.
-- **19 nov.:** entrega.
+## Definition of Done del prototipo
+- Se puede ejecutar siguiendo un README.
+- Los flujos centrales funcionan con datos precargados.
+- Las validaciones básicas se ejecutan en el backend.
+- Se prueba una compra simulada y se confirma un pedido persistido.
+- No se almacenan tarjetas ni secretos.
+- Se conocen y documentan las limitaciones de la demostración.
 
-## Relación con el plan anterior
-[Plan original de 12 semanas — histórico](./PLAN_DE_DESARROLLO.md) · [Issues](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues) · [Project #7](https://github.com/users/Geovanni-Gonzalez/projects/7/views/1).
+## Coordinación
+Actualización diaria breve; una tarea principal en curso por persona. Integrar y probar cambios diariamente. La fecha límite del 19 de noviembre no se desplaza por funcionalidades adicionales.
+
+[Issues](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues) · [GitHub Project #7](https://github.com/users/Geovanni-Gonzalez/projects/7/views/1) · [Plan histórico](./PLAN_DE_DESARROLLO.md).
