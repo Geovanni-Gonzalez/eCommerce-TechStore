@@ -1,4 +1,7 @@
 # Plan vigente — Prototipo eCommerce TechStore
+
+> **ATENCIÓN — Consigna oficial Proyecto #3:** La aplicación debe aplicar **Modelo–Vista–Controlador (MVC)** y **mínimo tres patrones GoF**; además debe demostrar **UX, UI y accesibilidad** en la exposición. El repositorio debe ser **PÚBLICO**. **Fecha límite: jueves 19 de noviembre de 2026 a las 4:00 p. m. (hora de Costa Rica)**. La configuración actual del repositorio es privada; su propietario debe revisar secretos y hacerlo público antes de entregar.
+
 **Fecha de corte:** 14 de noviembre de 2026. **Entrega:** jueves **19 de noviembre de 2026** (Costa Rica).  
 **Equipo:** Geovanni González Aguilar y Neyshell Blear Obregón.  
 **Alcance confirmado:** un **prototipo ejecutable que demuestre las funcionalidades principales**, NO una plataforma comercial lista para producción.
@@ -68,3 +71,25 @@ Especialmente:
 Actualización diaria breve; una tarea principal en curso por persona. Integrar y probar cambios diariamente. La fecha límite del 19 de noviembre no se desplaza por funcionalidades adicionales.
 
 [Issues](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues) · [GitHub Project #7](https://github.com/users/Geovanni-Gonzalez/projects/7/views/1) · [Plan histórico](./PLAN_DE_DESARROLLO.md).
+
+## Requisitos obligatorios de la consigna — Proyecto #3
+**Estos requisitos prevalecen sobre las características opcionales del MVP.** La documentación de arquitectura por sí sola no cumple la consigna: los patrones deberán existir en el código ejecutable y ser demostrables.
+
+| Requisito | Aplicación concreta en TechStore | Issue |
+|---|---|---|
+| Modelo–Vista–Controlador | Modelo: entidades y dominio Spring Boot. Controlador: controladores REST Spring. Vista: interfaces Next.js; explicar que frontend y backend son separados y documentar el flujo | [BKL-065](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/66) |
+| GoF Strategy | Dos políticas intercambiables de costo de envío (tarifa fija, envío gratuito por umbral) usadas por checkout | [BKL-066](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/67) |
+| GoF Facade | `CheckoutFacade` coordina validaciones, cálculo y persistencia, sin lógica de negocio en el controlador | [BKL-067](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/68) |
+| GoF Observer | Evento de pedido creado y observador que registra auditoría o notificación **simulada** | [BKL-068](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/69) |
+| UX, UI, Accesibilidad | Navegación clara, diseño responsivo, etiquetas, navegación con teclado, foco visible y estados de error | [BKL-069](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/70) |
+| Repositorio público | Inspeccionar secretos/datos, configurar visibilidad pública por el propietario y probar enlace sin iniciar sesión | [BKL-070](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/71) |
+| Exposición | Demostración del sistema en funcionamiento, explicación y localización de los tres patrones en el código, pruebas UX/UI | [BKL-071](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues/72) |
+
+### Ajuste de prioridades y actividades
+- **14–15 noviembre:** base técnica, catálogo y preparación de clases/interfaces para los tres patrones; diseñar con MVC.
+- **16 noviembre:** terminar carrito y pedido persistente; implementar Facade + Strategy dentro del checkout.
+- **17 noviembre:** implementar Observer y mostrar los tres patrones ejecutándose; UX/UI/accesibilidad, integración y pruebas.
+- **18 noviembre:** congelar el código, ensayar exposición, revisar secretos y publicar repositorio **tras autorización del propietario**; preparar README y plan de respaldo.
+- **19 noviembre antes de las 16:00:** realizar entrega y exposición según instrucciones del docente.
+
+**Si falta tiempo:** reducir funciones de negocio secundarias (administración, reseñas, logística externa), **no** omitir MVC, los tres patrones, el repositorio público o la exposición.
