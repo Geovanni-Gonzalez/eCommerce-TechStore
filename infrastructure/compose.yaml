@@ -1,11 +1,20 @@
+# Entorno de desarrollo local: copiar infrastructure/.env.example a infrastructure/.env
 services:
   postgres:
     image: postgres:17-alpine
     container_name: techstore-postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: 
-      
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - techstore_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techstore -d techstore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   techstore_postgres_data:
