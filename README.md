@@ -71,7 +71,7 @@ Ejecutar prueba del backend:
 npm run test:api
 ```
 
-> No se necesita PostgreSQL para el endpoint de salud inicial. La conexión real de la API a la base de datos pertenece a BKL-011.
+> El endpoint de salud responde independientemente de la base, pero desde BKL-011 el arranque completo de la API necesita que PostgreSQL esté disponible y configurado.
 
 ## Preparar PostgreSQL local
 
@@ -94,6 +94,56 @@ Los valores predeterminados son **solo para desarrollo local**, están ligados a
 - `infrastructure/.env.example` describe credenciales de ejemplo de PostgreSQL.
 - Copiar los archivos de ejemplo a `.env.local` y `infrastructure/.env` únicamente cuando haga falta; estos archivos reales están ignorados por Git.
 - Nunca subir contraseñas, tarjetas, claves de API, tokens ni datos personales al repositorio.
+
+
+## BKL-011 — conexión a PostgreSQL y migraciones Flyway
+
+1. Asegura que Docker Desktop esté ejecutándose. Desde la raíz, crea la configuración local (solo una vez):
+
+   ```powershell
+   Copy-Item infrastructure/.env.example infrastructure/.env
+   ```
+
+   **Solo para desarrollo local:** revisa `infrastructure/.env` antes de usarla. La contraseña de ejemplo no debe usarse para datos reales o desplegar públicamente.
+
+2. Levanta PostgreSQL y comprueba su estado:
+
+   ```powershell
+   docker compose -f infrastructure/compose.yaml up -d
+   docker compose -f infrastructure/compose.yaml ps
+   ```
+
+3. En la misma terminal en la que ejecutarás Maven, configura la contraseña de desarrollo local:
+
+   ```powershell
+   $env:SPRING_DATASOURCE_PASSWORD = "techstore_dev_only"
+   npm run dev:api
+   ```
+
+   Si configuraste otra contraseña en la base, utiliza la misma. **No guardes contraseñas reales en Git ni publiques capturas donde aparezcan.**
+
+4. Al iniciar, **Flyway** ejecuta automáticamente `V1__create_catalog_tables.sql` una vez y registra el resultado en `flyway_schema_history`. Compruébalo desde otra terminal:
+
+   ```powershell
+   docker exec techstore-postgres psql -U techstore -d techstore -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank;"
+   docker exec techstore-postgres psql -U techstore -d techstore -c "\dt"
+   ```
+
+   Se esperan las tablas `categories`, `products` y `flyway_schema_history` y una migración V1 exitosa. Al reiniciar la API la migración **no** debe ejecutarse de nuevo.
+
+5. Ejecuta la prueba unitaria del backend:
+
+   ```powershell
+   npm run test:api
+   ```
+
+   > Esta prueba unitaria no requiere PostgreSQL. La prueba real de Flyway se confirma al **arrancar la API con la base funcionando** y consultar el historial de migraciones.
+
+6. Si la API no consigue acceder a PostgreSQL: comprueba `docker compose ps`, el puerto 5432 y que la contraseña proporcionada en `SPRING_DATASOURCE_PASSWORD` coincida con la contraseña **con la que se inicializó el volumen**. Cambiar `POSTGRES_PASSWORD` después de crear el volumen **no** modifica automáticamente la contraseña de un usuario ya existente.
+
+**Precaución:** `docker compose down` detiene los contenedores y conserva los datos; `docker compose down -v` elimina el volumen de datos y no debe usarse sin querer borrar la base.
+
+**Alcance BKL-011:** se crean las tablas iniciales de catálogo con Flyway y se configura JDBC. Los controladores, entidades Java, pedidos y autenticación llegarán en sus respectivos issues; esta migración no implementa aún las funcionalidades del negocio.
 
 ## Estado del proyecto
 
