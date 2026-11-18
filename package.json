@@ -12,7 +12,9 @@
     "typecheck:web": "npm run typecheck --workspace @techstore/web",
     "lint:web": "npm run lint --workspace @techstore/web",
     "dev:api": "mvn -f apps/api/pom.xml spring-boot:run",
-    "test:api": "mvn -f apps/api/pom.xml test"
+    "test:api": "mvn -f apps/api/pom.xml test",
+    "validate:api-contract": "node scripts/validate-openapi.mjs",
+    "test:api-contract": "node --test scripts/validate-openapi.test.mjs"
   },
   "engines": {
     "node": ">=20.9.0"
