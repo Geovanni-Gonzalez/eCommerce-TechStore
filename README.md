@@ -179,6 +179,29 @@ La estructura Java incluye `config`, `shared`, `catalog`, `users`, `cart` y `ord
 
 El valor predeterminado de `CORS_ALLOWED_ORIGINS` permite únicamente `http://localhost:3000` y `http://127.0.0.1:3000`; puede sobrescribirse mediante la variable de entorno homónima, separando varios orígenes con comas. No se habilitan cookies cross-origin y no se expone toda la información de Actuator.
 
+## BKL-009 — estructura y herramientas del frontend
+
+- Next.js App Router, TypeScript, layout reutilizable con encabezado y navegación accesible.
+- Rutas base `/`, `/productos`, `/carrito` y `/login`. **Son páginas de estructura**; todavía no implementan catálogo, carrito ni autenticación.
+- Cliente HTTP tipado `apps/web/src/lib/api.ts`: exporta `apiGet<T>()` y `ApiError`, usa `NEXT_PUBLIC_API_URL` (por defecto `http://localhost:8080`).
+- Configuración oficial de ESLint para Next.js 16 con reglas Core Web Vitals y TypeScript.
+
+**Preparación local importante:** BKL-009 incorpora las dependencias `eslint` y `eslint-config-next`, pero **`package-lock.json` aún debe actualizarse**. En la raíz del repositorio, después de cambiar a esta rama:
+
+```powershell
+npm install
+npm run lint:web
+npm run typecheck:web
+npm run build:web
+npm run dev:web
+```
+
+`npm install` actualiza `package-lock.json`. **Versionar y subir ese cambio en la misma rama del PR antes de fusionarlo**; de lo contrario, `npm ci` puede fallar por manifiesto y lockfile desincronizados. En CI, utilizar `npm ci` solo después de actualizar el lockfile.
+
+La cabecera y el menú comparten semántica `header/nav/main/footer`, enlace para saltar al contenido y foco visible. Las páginas base proporcionan mensajes de alcance para no aparentar funcionalidades aún inexistentes.
+
+Si el backend está disponible, el frontend podrá consumir `http://localhost:8080/api/**`, que BKL-010 habilitó con CORS para el origen `http://localhost:3000`.
+
 ## Estado del proyecto
 
 Los issues **BKL-008 y BKL-011** preparan el monorepositorio, PostgreSQL, JDBC y las migraciones. **BKL-010** añade módulos de backend, Actuator y CORS local.
