@@ -2,7 +2,7 @@
 
 Prototipo académico de tienda B2C de accesorios tecnológicos para el Proyecto #3 de Diseño de Software. Se trabajará con arquitectura monolítica modular, frontend y backend separados.
 
-**Entrega académica:** 19 de noviembre de 2026, 4:00 p. m. (Costa Rica).
+**Entrega académica actualizada:** sábado 21 de noviembre de 2026, 10:00 p. m. (Costa Rica), según reprogramación comunicada por el equipo.
 
 ## Estructura
 
@@ -43,7 +43,7 @@ npm run typecheck:web
 npm run build:web
 ```
 
-> El archivo `package-lock.json` se deberá generar y versionar al ejecutar `npm install` en un equipo con acceso a npm. La rama de inicialización contiene dependencias declaradas, pero no un lockfile generado.
+> El archivo `package-lock.json` está versionado. Utiliza `npm ci` cuando quieras reproducir la instalación registrada.
 
 ## Iniciar el backend
 
@@ -145,11 +145,45 @@ Los valores predeterminados son **solo para desarrollo local**, están ligados a
 
 **Alcance BKL-011:** se crean las tablas iniciales de catálogo con Flyway y se configura JDBC. Los controladores, entidades Java, pedidos y autenticación llegarán en sus respectivos issues; esta migración no implementa aún las funcionalidades del negocio.
 
+
+## BKL-010 — base modular del backend y Actuator
+
+La estructura Java incluye `config`, `shared`, `catalog`, `users`, `cart` y `orders`. Los módulos de dominio contienen por ahora archivos `package-info.java` para documentar sus responsabilidades; sus clases de negocio se crearán en los issues correspondientes.
+
+### Comprobaciones
+
+1. Inicia Docker Desktop y PostgreSQL como se explica arriba. En PowerShell, utiliza **Java 21** y configura localmente `SPRING_DATASOURCE_PASSWORD` antes de ejecutar `npm run dev:api`.
+2. Comprueba la salud de la aplicación:
+
+   ```powershell
+   Invoke-RestMethod http://localhost:8080/actuator/health
+   Invoke-RestMethod http://localhost:8080/api/health
+   ```
+
+   Actuator debe devolver al menos `status: UP`; `/api/health` mantiene su respuesta histórica con `service: techstore-api`. El endpoint de Actuator refleja también la salud de los componentes autoconfigurados, incluyendo PostgreSQL cuando corresponda.
+
+3. Comprueba CORS desde otra terminal (simula la solicitud del navegador Next.js):
+
+   ```powershell
+   $headers = @{ Origin = "http://localhost:3000" }
+   $response = Invoke-WebRequest http://localhost:8080/api/health -Headers $headers
+   $response.Headers["Access-Control-Allow-Origin"]
+   ```
+
+   El resultado debe ser `http://localhost:3000`. Esto prueba la configuración de CORS para rutas `/api/**`; no implica que el frontend ya consuma la API.
+4. Ejecuta pruebas:
+
+   ```powershell
+   npm run test:api
+   ```
+
+El valor predeterminado de `CORS_ALLOWED_ORIGINS` permite únicamente `http://localhost:3000` y `http://127.0.0.1:3000`; puede sobrescribirse mediante la variable de entorno homónima, separando varios orígenes con comas. No se habilitan cookies cross-origin y no se expone toda la información de Actuator.
+
 ## Estado del proyecto
 
-Este issue **BKL-008** crea el monorepositorio y permite iniciar por separado la interfaz y una API mínima de salud.
+Los issues **BKL-008 y BKL-011** preparan el monorepositorio, PostgreSQL, JDBC y las migraciones. **BKL-010** añade módulos de backend, Actuator y CORS local.
 
-**No implementa todavía:** registro de usuarios, catálogo conectado a la API, carrito, pedidos, persistencia PostgreSQL, pagos ni los patrones GoF. Cada funcionalidad se construirá en su issue, sin prometer una tienda operativa al completar el esqueleto.
+**No implementa todavía:** registro de usuarios, catálogo conectado a la API, carrito, pedidos ni pagos; tampoco los patrones GoF. Cada funcionalidad se construirá en su issue, sin prometer una tienda operativa al completar el esqueleto.
 
 La entrega del curso requiere MVC, al menos tres patrones GoF (Strategy, Facade y Observer propuestos), exposición con UX/UI/accesibilidad y **repositorio público**. Antes de cambiar la visibilidad debe revisarse que no existan secretos.
 

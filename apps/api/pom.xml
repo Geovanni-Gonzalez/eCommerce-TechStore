@@ -27,6 +27,11 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Salud y diagnóstico controlado de la aplicación -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- Conexión JDBC y pool de conexiones -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
