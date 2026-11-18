@@ -202,6 +202,21 @@ La cabecera y el menú comparten semántica `header/nav/main/footer`, enlace par
 
 Si el backend está disponible, el frontend podrá consumir `http://localhost:8080/api/**`, que BKL-010 habilitó con CORS para el origen `http://localhost:3000`.
 
+## BKL-013 — Contrato REST y OpenAPI inicial
+
+El contrato de referencia se encuentra en [`docs/api/openapi.json`](docs/api/openapi.json), y las convenciones en [`docs/api/REST_CONVENTIONS.md`](docs/api/REST_CONVENTIONS.md). Documenta 8 operaciones para salud, catálogo, registro/ingreso y pedidos.
+
+**Importante:** solamente `GET /api/health` está implementado. Las otras 7 operaciones son contratos **planificados** para próximos issues; no son endpoints funcionales ni se han ejecutado contra Spring Boot.
+
+Validación reproducible desde la raíz, con Node.js:
+
+```powershell
+npm run validate:api-contract
+npm run test:api-contract
+```
+
+El primer script comprueba JSON, referencias, operación/respuestas, Problem Details y seguridad de pedidos; el segundo ejecuta pruebas positivas y negativas del validador. Ambos scripts usan únicamente módulos estándar de Node (sin nuevas dependencias npm). La prueba de conformidad completa de OpenAPI y las pruebas HTTP se harán conforme se implementen los controladores.
+
 ## Estado del proyecto
 
 Los issues **BKL-008 y BKL-011** preparan el monorepositorio, PostgreSQL, JDBC y las migraciones. **BKL-010** añade módulos de backend, Actuator y CORS local.
