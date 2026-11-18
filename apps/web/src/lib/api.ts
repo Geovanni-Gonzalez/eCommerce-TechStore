@@ -1,9 +1,7 @@
 /**
  * Cliente HTTP reutilizable para la API Spring Boot.
- *
- * En los componentes de servidor, la variable API_URL puede apuntar a una
- * dirección interna. Para llamadas desde el navegador, usa NEXT_PUBLIC_API_URL.
- * No incluye credenciales ni tokens por defecto.
+ * NEXT_PUBLIC_API_URL debe apuntar al backend accesible desde el navegador.
+ * No incluye contraseñas, sesiones ni tokens por defecto.
  */
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
@@ -23,13 +21,13 @@ export async function apiGet<T>(
   path: `/${string}`,
   init?: Omit<RequestInit, "method">,
 ): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
+
   const response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     method: "GET",
-    headers: {
-      Accept: "application/json",
-      ...init?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
