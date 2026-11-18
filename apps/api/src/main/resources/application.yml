@@ -1,6 +1,13 @@
 spring:
   application:
     name: techstore-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/techstore
+    username: techstore
+    # Contraseña suministrada con SPRING_DATASOURCE_PASSWORD (nunca en Git)
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: 8080
