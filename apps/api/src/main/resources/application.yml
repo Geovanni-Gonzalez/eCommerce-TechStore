@@ -11,3 +11,18 @@ spring:
 
 server:
   port: 8080
+
+# Solo orígenes explícitos; nunca usar "*" junto con cookies.
+techstore:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+
+# Exponer únicamente la salud; no divulgar detalles internos en HTTP.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
