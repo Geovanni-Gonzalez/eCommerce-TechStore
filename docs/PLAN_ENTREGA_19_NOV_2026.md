@@ -1,8 +1,10 @@
 # Plan vigente — Prototipo eCommerce TechStore
 
-> **ATENCIÓN — Consigna oficial Proyecto #3:** La aplicación debe aplicar **Modelo–Vista–Controlador (MVC)** y **mínimo tres patrones GoF**; además debe demostrar **UX, UI y accesibilidad** en la exposición. El repositorio debe ser **PÚBLICO**. **Fecha límite: jueves 19 de noviembre de 2026 a las 4:00 p. m. (hora de Costa Rica)**. La configuración actual del repositorio es privada; su propietario debe revisar secretos y hacerlo público antes de entregar.
+> **ACTUALIZACIÓN DE CALENDARIO:** el equipo comunicó que la entrega se trasladó al **sábado 21 de noviembre de 2026, 10:00 p. m. (Costa Rica)**. Este cambio sustituye el plazo de 19 noviembre en el cronograma previo; el nombre histórico de este archivo se conserva para no romper enlaces.
 
-**Fecha de corte:** 14 de noviembre de 2026. **Entrega:** jueves **19 de noviembre de 2026** (Costa Rica).  
+> **ATENCIÓN — Consigna oficial Proyecto #3:** La aplicación debe aplicar **Modelo–Vista–Controlador (MVC)** y **mínimo tres patrones GoF**; además debe demostrar **UX, UI y accesibilidad** en la exposición. El repositorio debe ser **PÚBLICO**. **Fecha límite: sábado 21 de noviembre de 2026 a las 10:00 p. m. (hora de Costa Rica)**. La configuración actual del repositorio es privada; su propietario debe revisar secretos y hacerlo público antes de entregar.
+
+**Fecha de corte inicial:** 14 de noviembre de 2026. **Nueva fecha de entrega comunicada por el equipo:** 18 de noviembre de 2026. **Entrega:** sábado **21 de noviembre de 2026 a las 10:00 p. m.** (Costa Rica).  
 **Equipo:** Geovanni González Aguilar y Neyshell Blear Obregón.  
 **Alcance confirmado:** un **prototipo ejecutable que demuestre las funcionalidades principales**, NO una plataforma comercial lista para producción.
 
@@ -68,7 +70,7 @@ Especialmente:
 - Se conocen y documentan las limitaciones de la demostración.
 
 ## Coordinación
-Actualización diaria breve; una tarea principal en curso por persona. Integrar y probar cambios diariamente. La fecha límite del 19 de noviembre no se desplaza por funcionalidades adicionales.
+Actualización diaria breve; una tarea principal en curso por persona. Integrar y probar cambios diariamente. La fecha límite del 21 de noviembre no se desplaza por funcionalidades adicionales.
 
 [Issues](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues) · [GitHub Project #7](https://github.com/users/Geovanni-Gonzalez/projects/7/views/1) · [Plan histórico](./PLAN_DE_DESARROLLO.md).
 
@@ -90,6 +92,6 @@ Actualización diaria breve; una tarea principal en curso por persona. Integrar 
 - **16 noviembre:** terminar carrito y pedido persistente; implementar Facade + Strategy dentro del checkout.
 - **17 noviembre:** implementar Observer y mostrar los tres patrones ejecutándose; UX/UI/accesibilidad, integración y pruebas.
 - **18 noviembre:** congelar el código, ensayar exposición, revisar secretos y publicar repositorio **tras autorización del propietario**; preparar README y plan de respaldo.
-- **19 noviembre antes de las 16:00:** realizar entrega y exposición según instrucciones del docente.
+- **21 noviembre antes de las 22:00:** realizar entrega y exposición según instrucciones del docente.
 
 **Si falta tiempo:** reducir funciones de negocio secundarias (administración, reseñas, logística externa), **no** omitir MVC, los tres patrones, el repositorio público o la exposición.
