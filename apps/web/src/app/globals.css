@@ -1,0 +1,7 @@
+* { box-sizing: border-box; }
+html { font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: #f7f8fa; color: #18212f; }
+.container { max-width: 760px; margin: 12vh auto; padding: 2rem; }
+h1 { font-size: clamp(2.5rem, 7vw, 4rem); margin: 0.5rem 0 1rem; }
+p { line-height: 1.7; }
+.eyebrow { color: #365d88; font-weight: 700; letter-spacing: 0.05em; }
