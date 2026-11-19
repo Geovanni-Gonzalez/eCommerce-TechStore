@@ -226,3 +226,27 @@ Los issues **BKL-008 y BKL-011** preparan el monorepositorio, PostgreSQL, JDBC y
 La entrega del curso requiere MVC, al menos tres patrones GoF (Strategy, Facade y Observer propuestos), exposición con UX/UI/accesibilidad y **repositorio público**. Antes de cambiar la visibilidad debe revisarse que no existan secretos.
 
 Consulta [documentación de arquitectura](docs/architecture/MONOREPO.md), [plan de entrega](docs/PLAN_ENTREGA_19_NOV_2026.md) y [GitHub Issues](https://github.com/Geovanni-Gonzalez/eCommerce-TechStore/issues).
+
+## BKL-012 — Integración continua (GitHub Actions)
+
+El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) comprueba automáticamente los Pull Requests dirigidos a `dev` o `main`, los pushes a esas ramas y permite ejecución manual desde Actions. Los jobs se llaman **`Frontend - lint, tipos, contrato, build y smoke`** y **`Backend - compilar y probar Maven`**.
+
+- **Frontend (Node.js 22):** `npm ci`, ESLint, `tsc --noEmit`, validación y pruebas del contrato OpenAPI, build de Next.js y prueba de humo HTTP de `/`, `/productos`, `/carrito` y `/login` utilizando el servidor de producción.
+- **Backend (Java 21):** `mvn -B -ntp -f apps/api/pom.xml clean verify`. Las pruebas actuales son unitarias, por lo que no necesitan PostgreSQL; integrar pruebas reales contra PostgreSQL se hará cuando se incorporen repositorios/servicios de negocio.
+- Se utilizan permisos mínimos de GitHub (`contents: read`), cachés npm/Maven, límites de tiempo y cancelación de ejecuciones obsoletas.
+- **Importante:** agregar un workflow **no bloquea merges automáticamente**. Para cumplir completamente BKL-012, configurar en GitHub `Settings → Rules → Rulesets` (o `Settings → Branches → Branch protection rules`) una regla para `dev` que exija los dos checks del workflow, y verificarla con un PR. En un repositorio privado, la disponibilidad de reglas de protección puede depender del plan/permisos de GitHub.
+
+### Reproducción local
+
+```powershell
+npm ci
+npm run lint:web
+npm run typecheck:web
+npm run validate:api-contract
+npm run test:api-contract
+npm run build:web
+mvn -B -ntp -f apps/api/pom.xml clean verify
+```
+
+El resultado de GitHub Actions debe verificarse en la pestaña **Checks** del PR antes del merge. Si un job falla, revisar su log y corregir la rama; no forzar el merge.
+

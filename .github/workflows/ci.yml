@@ -1,0 +1,98 @@
+name: TechStore CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# Las verificaciones solo necesitan leer el repositorio.
+permissions:
+  contents: read
+
+# Cancela ejecuciones anteriores del mismo PR/rama para ahorrar tiempo.
+concurrency:
+  group: techstore-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Frontend - lint, tipos, contrato, build y smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v7
+
+      - name: Preparar Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias reproducibles
+        run: npm ci
+
+      - name: Revisar ESLint
+        run: npm run lint:web
+
+      - name: Comprobar tipos TypeScript
+        run: npm run typecheck:web
+
+      - name: Validar contrato OpenAPI
+        run: npm run validate:api-contract
+
+      - name: Probar contrato OpenAPI
+        run: npm run test:api-contract
+
+      - name: Compilar frontend de producción
+        run: npm run build:web
+
+      - name: Probar navegación en servidor de producción
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start:web > /tmp/techstore-web.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid" 2>/dev/null || true; cat /tmp/techstore-web.log' EXIT
+
+          # Espera al servidor; si no arranca, curl devolverá error.
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/ -o /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          for path in / /productos /carrito /login; do
+            curl --fail --silent --show-error "http://127.0.0.1:3000${path}" -o /dev/null
+            echo "HTTP 200: ${path}"
+          done
+
+  api:
+    name: Backend - compilar y probar Maven
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v7
+
+      - name: Preparar Java 21 y caché Maven
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: apps/api/pom.xml
+
+      # Ejecuta las pruebas existentes y verifica que el backend empaqueta.
+      # Los tests actuales son unitarios: no necesitan PostgreSQL.
+      - name: Compilar backend y ejecutar pruebas
+        run: mvn -B -ntp -f apps/api/pom.xml clean verify
