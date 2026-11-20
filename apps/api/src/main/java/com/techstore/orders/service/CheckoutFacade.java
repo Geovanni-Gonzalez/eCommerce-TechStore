@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
  * snapshot del pedido, vaciado del carrito y señal de evento.
  *
  * @Transactional garantiza atomicidad y rollback integral. El Observer
- * concreto y su entrega durable pertenecen a BKL-068.
+ * concreto de BKL-068 reacciona AFTER_COMMIT (best effort, sin outbox).
  */
 @Service
 public class CheckoutFacade {
@@ -64,8 +64,8 @@ public class CheckoutFacade {
                         line.unitPriceCrc()))
                 .toList();
 
-        // 3. Reserva de stock, pedido, carrito y publicación lógica del evento
-        // deben pertenecer a esta MISMA transacción.
+        // 3. Pedido, reserva, carrito y señal de evento bajo una transacción.
+        // El Observer audita solo después del commit efectivo.
         OrderDraft draft = new OrderDraft(userId, address, lines, totals);
         Order order = orders.saveDraft(draft);
         stock.reserveForOrder(order.id(), current);
