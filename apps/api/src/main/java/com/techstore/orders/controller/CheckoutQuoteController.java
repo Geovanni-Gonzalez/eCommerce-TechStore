@@ -22,8 +22,10 @@ public class CheckoutQuoteController {
     }
 
     @GetMapping(value = "/quote", produces = MediaType.APPLICATION_JSON_VALUE)
-    public CheckoutQuoteResponse getQuote(
+    public ResponseEntity<CheckoutQuoteResponse> getQuote(
             @AuthenticationPrincipal SessionPrincipal principal) {
-        return service.quote(principal.id());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(service.quote(principal.id()));
     }
 }
