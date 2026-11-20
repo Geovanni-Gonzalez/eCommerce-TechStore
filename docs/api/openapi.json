@@ -1144,6 +1144,79 @@
         },
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/orders/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "cancelPendingOrder",
+        "summary": "Cancelar pedido propio PENDING y liberar reservas atómicamente",
+        "description": "Solo CLIENT propietario. Idempotente: PENDING->CANCELLED libera stock exactamente una vez; repetir sobre CANCELLED devuelve 204. CONFIRMED devuelve 409. Reservas vencidas se cancelan por lote automáticamente tras 30 min (Flyway V9). No afecta pagos ni confirma pedidos.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pedido cancelado; reservas liberadas, o ya estaba cancelado"
+          },
+          "401": {
+            "description": "Token Bearer requerido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido inexistente o ajeno (ORDER_NOT_FOUND)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pedido no pendiente (ORDER_NOT_CANCELLABLE)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {

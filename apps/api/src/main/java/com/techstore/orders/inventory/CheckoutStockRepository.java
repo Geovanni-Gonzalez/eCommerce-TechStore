@@ -12,9 +12,9 @@ public interface CheckoutStockRepository {
     void lockProducts(List<Long> productIds);
     void reserveForOrder(long orderId, List<CartLine> lines);
 
-    /** Para flujo futuro de cancelación: solo RESERVED -> RELEASED. */
+    /** BKL-027: cancelación de pedido PENDING, solo RESERVED -> RELEASED. */
     void releaseReservations(long orderId);
 
-    /** Para flujo futuro de confirmación: solo RESERVED -> CONSUMED. */
+    /** BKL-040: confirmación de pago, solo RESERVED -> CONSUMED. */
     void consumeReservations(long orderId);
 }

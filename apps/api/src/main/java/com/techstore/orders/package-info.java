@@ -1,5 +1,6 @@
 /**
- * Pedidos históricos BKL-030, cotización BKL-032 y checkout BKL-033.
+ * Pedidos históricos BKL-030, cotización BKL-032, checkout BKL-033,
+ * Observer BKL-068 y cancelación/vencimiento BKL-027.
  *
  * GoF Strategy intercambia políticas de envío; GoF Facade coordina las
  * operaciones transaccionales. BKL-068 implementa Observer concreto AFTER_COMMIT con evidencia de
