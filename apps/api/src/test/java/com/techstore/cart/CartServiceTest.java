@@ -116,13 +116,13 @@ class CartServiceTest {
         @Override public long countActive() { return 0; }
     }
 
-    private static final class FakeCarts implements CartRepository {
+    private final class FakeCarts implements CartRepository {
         private final Map<Long, Map<Long, Integer>> data = new HashMap<>();
         @Override public List<CartLine> findItems(long userId) {
             List<CartLine> lines = new ArrayList<>();
             data.getOrDefault(userId, Map.of()).forEach((id, quantity) ->
                     lines.add(new CartLine(id, "TEST", "Mouse",
-                            new BigDecimal("12990.00"), quantity, 10, true)));
+                            new BigDecimal("12990.00"), quantity, 10, products.active)));
             return lines;
         }
         @Override public boolean containsProduct(long userId, long productId) {
@@ -144,7 +144,8 @@ class CartServiceTest {
             return true;
         }
         @Override public boolean removeProduct(long userId, long productId) {
-            return data.getOrDefault(userId, Map.of()).remove(productId) != null;
+            var items = data.get(userId);
+            return items != null && items.remove(productId) != null;
         }
         @Override public void clear(long userId) {
             data.remove(userId);
