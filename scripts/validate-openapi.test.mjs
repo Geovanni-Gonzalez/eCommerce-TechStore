@@ -9,7 +9,7 @@ const clone = () => structuredClone(original);
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
   assert.equal(result.operationCount, 8);
-  assert.equal(result.proposedCount, 5);
+  assert.equal(result.proposedCount, 4);
 });
 
 test("rechaza referencias inexistentes", () => {
@@ -36,4 +36,10 @@ test("rechaza operationId repetido", () => {
   invalid.paths["/api/products"].get.operationId =
     invalid.paths["/api/products/{id}"].get.operationId;
   assert.throws(() => validateContract(invalid), /operationId duplicado/);
+});
+
+test("el registro seguro se mantiene marcado como implementado", () => {
+  const invalid = clone();
+  invalid.paths["/api/auth/register"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(invalid), /El registro seguro debe estar marcado como implementado/);
 });

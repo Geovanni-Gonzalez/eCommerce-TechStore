@@ -69,12 +69,15 @@ export function validateContract(doc) {
   }
 
   assert.equal(operationCount, 8, "Se esperan 8 operaciones iniciales");
-  assert.equal(proposedCount, 5, "Health y dos rutas del catálogo están implementados");
+  assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
+    "El registro seguro debe estar marcado como implementado");
+  assert.equal(proposedCount, 4, "Health, catálogo y registro están implementados");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);
   }
   assert.equal(doc.paths["/api/health"].get["x-implementation-status"], "implemented");
+
   assert.ok(doc.components.schemas.Problem, "Falta esquema de errores");
   assert.ok(doc.components.securitySchemes.bearerAuth, "Falta seguridad para rutas privadas");
   for (const path of ["/api/orders", "/api/orders/{id}"]) {

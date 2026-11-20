@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato de referencia para frontend y backend. GET /api/health y los dos GET del catálogo están implementados y validados; registro, login y pedidos siguen planificados. Prototipo académico: pagos exclusivamente simulados y sin datos de tarjeta."
+    "description": "Contrato de referencia para frontend y backend. Están implementados GET /api/health, los dos GET de catálogo y POST /api/auth/register; login y pedidos permanecen planificados. Prototipo académico: pagos exclusivamente simulados y sin datos de tarjeta."
   },
   "servers": [
     {
@@ -242,7 +242,7 @@
             }
           }
         },
-        "x-implementation-status": "planned"
+        "x-implementation-status": "implemented"
       }
     },
     "/api/auth/login": {
@@ -738,10 +738,11 @@
           },
           "password": {
             "type": "string",
-            "description": "Contraseña; nunca almacenar ni retornar en texto plano",
+            "description": "Contraseña; nunca almacenar ni retornar en texto plano. BCrypt acepta máximo 72 bytes UTF-8 para evitar truncamientos silenciosos.",
             "format": "password",
             "minLength": 8,
-            "maxLength": 128
+            "maxLength": 128,
+            "x-max-utf8-bytes": 72
           }
         },
         "required": [

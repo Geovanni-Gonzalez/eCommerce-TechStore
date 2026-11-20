@@ -15,5 +15,5 @@ public interface UserAccountRepository {
 
     Optional<UserAccount> findById(long id);
 
-    UserAccount createClient(UserEmail email, PasswordHash passwordHash);
+    UserAccount createClient(String displayName, UserEmail email, PasswordHash passwordHash);
 }
