@@ -12,6 +12,10 @@ import com.techstore.orders.domain.ShippingAddress;
 import com.techstore.orders.events.OrderCreatedEvent;
 import com.techstore.orders.events.OrderEventPublisher;
 import com.techstore.orders.inventory.CheckoutStockRepository;
+import com.techstore.orders.history.OrderStatusHistoryRepository;
+import com.techstore.orders.history.OrderStatusHistoryEntry;
+import com.techstore.orders.history.OrderChangeActor;
+import com.techstore.orders.history.OrderChangeReason;
 import com.techstore.orders.inventory.InsufficientStockException;
 import com.techstore.orders.pricing.CheckoutTotalsCalculator;
 import com.techstore.orders.pricing.EmptyCheckoutCartException;
@@ -30,12 +34,13 @@ class CheckoutFacadeTest {
     private final FakeStock stock = new FakeStock();
     private final FakeOrders orders = new FakeOrders();
     private final FakeEvents events = new FakeEvents();
+    private final FakeHistory history = new FakeHistory();
     private final CheckoutFacade facade = new CheckoutFacade(
             cart, stock,
             new CheckoutTotalsCalculator(
                     new FixedShippingStrategy(new BigDecimal("500.00")),
                     new BigDecimal("0.13")),
-            orders, events);
+            orders, events, history);
 
     @Test
     void facadeCoordinatesValidationSnapshotReservationAndEvent() {
@@ -55,6 +60,8 @@ class CheckoutFacadeTest {
         assertEquals(1, stock.reservationCalls);
         assertEquals(37, stock.reservationOrderId);
         assertTrue(cart.cleared);
+        assertEquals(37, history.createdOrderId);
+        assertEquals(11, history.ownerId);
         assertEquals(37, events.last.orderId());
         assertEquals(new BigDecimal("1630.00"), events.last.totalCrc());
     }
@@ -67,6 +74,7 @@ class CheckoutFacadeTest {
         assertEquals(0, stock.reservationCalls);
         assertEquals(0, orders.saved);
         assertNull(events.last);
+        assertEquals(0, history.createdOrderId);
     }
 
     @Test
@@ -147,6 +155,20 @@ class CheckoutFacadeTest {
         }
         @Override public Optional<Order> findByIdForUser(long userId, long id) {
             return Optional.empty();
+        }
+    }
+
+    private static final class FakeHistory implements OrderStatusHistoryRepository {
+        private long createdOrderId;
+        private long ownerId;
+        @Override public void recordCreated(long id, long userId) {
+            createdOrderId = id;
+            ownerId = userId;
+        }
+        @Override public void recordTransition(long id, OrderStatus from, OrderStatus to,
+                OrderChangeActor actor, Long actorId, OrderChangeReason reason) { }
+        @Override public List<OrderStatusHistoryEntry> findByOrderId(long id) {
+            return List.of();
         }
     }
 

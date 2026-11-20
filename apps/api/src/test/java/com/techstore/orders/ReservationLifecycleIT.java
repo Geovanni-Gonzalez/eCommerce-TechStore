@@ -182,6 +182,10 @@ class ReservationLifecycleIT {
     void cleanup() {
         if (userId < 1) return;
         jdbc.update("""
+                DELETE FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
+                """, userId);
+        jdbc.update("""
                 DELETE FROM order_event_audit
                 WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
                 """, userId);

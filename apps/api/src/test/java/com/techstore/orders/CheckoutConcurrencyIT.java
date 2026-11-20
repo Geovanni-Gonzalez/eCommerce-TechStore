@@ -118,6 +118,10 @@ class CheckoutConcurrencyIT {
     void cleanFixtures() {
         if (alice < 1 || bob < 1) return;
         jdbc.update("""
+                DELETE FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id IN (?,?))
+                """, alice, bob);
+        jdbc.update("""
                 DELETE FROM order_event_audit
                 WHERE order_id IN (SELECT id FROM orders WHERE user_id IN (?,?))
                 """, alice, bob);
