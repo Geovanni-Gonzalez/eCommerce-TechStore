@@ -366,4 +366,9 @@ La tasa ilustrativa (predeterminado 13 %), la tarifa (₡2500), el umbral (₡30
 
 `POST /api/orders` confirma un carrito del usuario autenticado **CLIENT** con únicamente `shippingAddress` en el JSON. La **CheckoutFacade** (GoF Facade) bloquea carrito y productos, recalcula precios e impuestos/envío con Strategy (BKL-032), crea el pedido PENDING/SIMULATED con snapshots históricos (BKL-030), descuenta el stock y registra reservas con Flyway **V7**, y vacía el carrito, **todo en una transacción PostgreSQL**. Errores controlados: 400, 401, 403, 409 o 422. Se añadieron pruebas de concurrencia real por última unidad y rollback tras un fallo posterior a la reserva.
 
-**Sin pagos reales ni confirmación definitiva:** la reserva no caduca automáticamente; su liberación/consumo orquestados quedan para BKL-027/BKL-045. `OrderCreatedEvent` y `OrderEventPublisher` preparan BKL-068, pero **todavía no hay Observer/listener concreto**. Documentación: [BKL-033 checkout y diseño Facade](docs/backend/CHECKOUT_ORDER.md). Ejecutar `mvn -f apps/api/pom.xml clean test` o, con `techstore_test`, `mvn -f apps/api/pom.xml clean verify`.
+**Sin pagos reales ni confirmación definitiva:** la reserva no caduca automáticamente; su liberación/consumo orquestados quedan para BKL-027/BKL-045. `OrderCreatedEvent` se integra con el **Observer GoF de BKL-068**: auditoría posterior al commit mediante listener desacoplado y Flyway V8 (entrega best effort, sin outbox). Documentación: [BKL-033 checkout y diseño Facade](docs/backend/CHECKOUT_ORDER.md). Ejecutar `mvn -f apps/api/pom.xml clean test` o, con `techstore_test`, `mvn -f apps/api/pom.xml clean verify`.
+
+
+## BKL-068 — Observer GoF para pedidos
+
+La creación de pedidos notifica `OrderCreatedEvent` sin acoplar `CheckoutFacade` a la reacción. `OrderAuditListener` observa **AFTER_COMMIT** y `JdbcOrderEventAuditRepository` persiste una fila idempotente en `order_event_audit` (Flyway V8) con **REQUIRES_NEW**. No hay auditoría si el checkout hace rollback; no se envían correos, y no hay garantía de entrega tras un crash (no outbox). Ver [diagrama UML, demo y pruebas](docs/backend/ORDER_OBSERVER.md).

@@ -58,7 +58,7 @@ OrderCheckoutController (HTTP)
             +-- OrderRepository.saveDraft (snapshots históricos BKL-030)
             +-- CheckoutStockRepository.reserveForOrder (UPDATE condicional)
             +-- CartRepository.clear (carrito consumido)
-            +-- OrderEventPublisher.orderCreated (señal Observer futura)
+            +-- OrderEventPublisher.orderCreated (Observer BKL-068, AFTER_COMMIT)
 ```
 
 La fachada presenta **una operación de alto nivel** a quien llama y oculta la coordinación de subsistemas, tal como prescribe GoF Facade. El controlador no calcula importes, no actualiza stock y no crea entidades directamente.
@@ -98,15 +98,9 @@ La combinación de bloqueo + `UPDATE` condicional evita stock negativo aunque va
 - **GRASP Information Expert**: `OrderDraft` y `OrderTotals` validan sus invariantes; el repositorio de inventario garantiza la condición de stock en PostgreSQL.
 - **GRASP Low Coupling/High Cohesion**: módulos aislados por responsabilidades claras, DTO público separado del dominio.
 
-## Preparación de GoF Observer — sin atribuirlo como implementado todavía
+## GoF Observer — BKL-068
 
-Se definen:
-
-- `OrderCreatedEvent(orderId,userId,totalCrc)`, sin información personal de entrega.
-- Puerto `OrderEventPublisher`, desacoplado del caso de uso.
-- `SpringOrderEventPublisher`, adaptador a `ApplicationEventPublisher`.
-
-**Aún no hay listener/Observer concreto, outbox persistente ni entrega fiable de eventos.** BKL-068 agregará observador de auditoría o notificación simulada, con evidencia. Para no emitir reacciones por una transacción revertida, un futuro listener debe usar `@TransactionalEventListener(phase = AFTER_COMMIT)`. Para garantizar entrega incluso después de caídas del proceso, se deberá evaluar un patrón *transactional outbox*. La publicación lógica ocurre dentro del caso de uso, pero no equivale a una notificación entregada.
+El puerto **OrderEventPublisher** publica **OrderCreatedEvent** durante el checkout. El observador concreto **OrderAuditListener** se ejecuta **AFTER_COMMIT** y persiste una auditoría idempotente mediante **Flyway V8** y una transacción nueva. Un rollback no produce auditoría. La entrega es best effort, sin outbox ni garantía ante caída del proceso. Diagrama y pruebas: [BKL-068 — GoF Observer](ORDER_OBSERVER.md).
 
 ## Pruebas
 
@@ -132,7 +126,7 @@ npm run test:api-contract
 
 - BKL-027 y BKL-045: vencimiento/cancelación y liberación/consumo automático de reservas según transiciones.
 - BKL-042: consultar historial y detalle de pedidos por cliente autenticado.
-- BKL-068: Observer concreto con auditoría o notificación simulada y pruebas AFTER_COMMIT.
+- BKL-068: Observer AFTER_COMMIT y evidencia SQL implementados; un transactional outbox fiable sigue fuera del alcance.
 - BKL-031: validación ampliada de dirección en frontend y guía de envío.
 - UI de checkout integrada en Next.js, accesibilidad y demostración MVC integral.
 - Validación fiscal, seguridad/antifraude, disponibilidad real, HTTPS y observabilidad para cualquier uso productivo.
