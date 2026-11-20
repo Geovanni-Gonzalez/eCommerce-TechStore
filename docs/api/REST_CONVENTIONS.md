@@ -10,7 +10,8 @@
 - **Implementado en BKL-028:** carrito de cliente autenticado (`GET/DELETE /api/cart`, `POST /api/cart/items`, `PATCH/DELETE /api/cart/items/{productId}`), respaldado por PostgreSQL. **La vista web del carrito sigue pendiente** (BKL-029).
 - **Implementado en BKL-030:** modelo histórico de pedidos (Flyway V6 y repositorio), pero **no** `POST /api/orders`: continúa planificado hasta checkout.
 - **Implementado en BKL-032:** `GET /api/checkout/quote` requiere Bearer CLIENT y calcula subtotal/impuesto/envío/total desde el carrito, mediante dos estrategias GoF de envío. Devuelve una **cotización provisional** sin reserva ni pedido.
-- **Planificado:** creación/consulta HTTP de pedidos (BKL-033 y posteriores), panel administrativo completo y autenticación de la interfaz web. `/api/admin/check` solo demuestra autorización por rol.
+- **Implementado en BKL-033:** `POST /api/orders` exige Bearer CLIENT y recibe solo `shippingAddress`. GoF Facade orquesta validación, montos, reserva atómica de stock, snapshots históricos y vaciado de carrito dentro de una transacción. Devuelve `201` con pedido `PENDING`/`SIMULATED`.
+- **Planificado:** consulta HTTP de historial/detalle de pedidos (BKL-042), cancelación/liberación automática, panel administrativo completo y autenticación de la interfaz web. `/api/admin/check` solo demuestra autorización por rol.
 - El atributo OpenAPI `x-implementation-status: planned | implemented` distingue ambos estados de forma explícita. Documentar **no** habilita un endpoint.
 - **Frontend:** consume estas rutas por HTTP/JSON usando `apps/web/src/lib/api.ts` y `NEXT_PUBLIC_API_URL`.
 - **Backend:** implementa DTOs, controladores, validaciones, persistencia y seguridad en sus issues. Actualizar el contrato y las pruebas en el mismo PR que cambie una ruta.

@@ -54,6 +54,7 @@ public class ApiSecurityConfig {
                                 "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/checkout/quote").hasRole("CLIENT")
                         .requestMatchers("/api/cart", "/api/cart/**").hasRole("CLIENT")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

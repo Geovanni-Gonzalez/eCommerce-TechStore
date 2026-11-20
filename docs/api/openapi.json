@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato frontend/backend del prototipo. Implementados: salud, catálogo, registro, sesión Bearer opaca, carrito y cotización de checkout. Los pedidos y el pago siguen planificados/simulados; la cotización no reserva stock."
+    "description": "Contrato backend/frontend. Implementados: salud, catálogo, registro, autenticación, carrito, cotización y POST /api/orders (pedido PENDING con reserva transaccional). Listados y detalles de pedidos permanecen planificados; no hay pagos reales."
   },
   "servers": [
     {
@@ -326,7 +326,7 @@
           "Orders"
         ],
         "operationId": "createOrder",
-        "summary": "Confirmar pedido simulado",
+        "summary": "Crear pedido PENDING con stock reservado en una transacción",
         "responses": {
           "201": {
             "description": "Pedido persistido",
@@ -366,8 +366,18 @@
               }
             }
           },
+          "403": {
+            "description": "Cuenta autenticada sin rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "409": {
-            "description": "Conflicto con el estado actual",
+            "description": "Stock insuficiente, artículo inactivo o concurrencia en reserva",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -377,7 +387,7 @@
             }
           },
           "422": {
-            "description": "Regla de negocio no satisfecha",
+            "description": "Carrito vacío",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -412,7 +422,8 @@
             }
           }
         },
-        "x-implementation-status": "planned"
+        "x-implementation-status": "implemented",
+        "description": "GoF CheckoutFacade: bloquea carrito y productos, recalcula montos con Strategy, guarda snapshots históricos, reserva stock en PostgreSQL, vacía carrito y publica OrderCreatedEvent. Solo ROLE_CLIENT. No cobra ni confirma pago; una cotización previa no garantiza stock."
       },
       "get": {
         "tags": [
@@ -1472,22 +1483,14 @@
       },
       "CreateOrderRequest": {
         "type": "object",
-        "description": "Pedido para simulación; jamás incluir información de tarjeta.",
+        "description": "Checkout confirmado desde el carrito del cliente autenticado. Solo se recibe shippingAddress; las líneas, los importes y el propietario se obtienen del servidor.",
         "additionalProperties": false,
         "properties": {
-          "items": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "$ref": "#/components/schemas/OrderLineRequest"
-            }
-          },
           "shippingAddress": {
             "$ref": "#/components/schemas/ShippingAddress"
           }
         },
         "required": [
-          "items",
           "shippingAddress"
         ]
       },
