@@ -324,3 +324,8 @@ Invoke-RestMethod "http://localhost:8080/api/products?page=0&size=12"
 
 Los activos deben aparecer, el inactivo no; el detalle de un producto inexistente responde 404. El script `scripts/ci/smoke-catalog.py` prueba ese comportamiento sobre HTTP en la base efímera de GitHub Actions. **No modifiques `V1__create_catalog_tables.sql`** para agregar datos de prueba.
 
+## BKL-014 — Persistencia de cuentas y roles
+
+La migración V2 añade `users` con correo único normalizado, hash BCrypt, roles `CLIENTE`/`ADMIN` y fechas de auditoría. Se implementan los contratos y las clases de persistencia y hashing para los futuros casos de uso de registro/autenticación. **Los endpoints auth siguen pendientes** (BKL-015/BKL-016).
+
+Ver [documentación del módulo de usuarios](docs/backend/USER_ACCOUNTS.md) para diseño SOLID/GRASP, pruebas y configuración de la base `techstore_test`.
