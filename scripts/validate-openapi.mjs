@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 16, "Se esperan 16 operaciones de API");
+  assert.equal(operationCount, 17, "Se esperan 17 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -88,6 +88,16 @@ export function validateContract(doc) {
     assert.equal(op["x-implementation-status"], "implemented", `Carrito pendiente: ${route}`);
     assert.deepEqual(op.security, [{ bearerAuth: [] }], `Carrito sin Bearer: ${route}`);
   }
+  const quote = doc.paths["/api/checkout/quote"]?.get;
+  assert.ok(quote, "Falta endpoint de cotización");
+  assert.equal(quote["x-implementation-status"], "implemented",
+    "Cotización debe estar implementada");
+  assert.deepEqual(quote.security, [{ bearerAuth: [] }],
+    "Cotización debe exigir Bearer");
+  assert.equal(quote.responses["200"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/CheckoutQuote", "Cotización debe devolver DTO");
+  assert.ok(quote.responses["409"] && quote.responses["422"],
+    "Cotización debe documentar carrito vacío e indisponible");
   assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
