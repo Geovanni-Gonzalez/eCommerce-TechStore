@@ -94,7 +94,7 @@ class AdminOrderStatusIT {
         mvc.perform(patch("/api/admin/orders/" + orderId + "/status")
                 .header("Authorization", bearer(admin))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\\"status\\":\\"CANCELLED\\"}"))
+                .content("{\"status\":\"CANCELLED\"}")
                 .andExpect(status().isNoContent())
                 .andExpect(header().string("Cache-Control", "no-store"));
         assertEquals("CANCELLED", orderStatus(orderId));
@@ -106,9 +106,13 @@ class AdminOrderStatusIT {
                 .andExpect(jsonPath("$[1].fromStatus").value("PENDING"))
                 .andExpect(jsonPath("$[1].toStatus").value("CANCELLED"))
                 .andExpect(jsonPath("$[1].actorType").value("ADMIN"))
-                .andExpect(jsonPath("$[1].actorId").value(adminId))
+                .andExpect(jsonPath("$[1].actorId").isNumber())
                 .andExpect(jsonPath("$[1].reason").value("ADMIN_CANCEL"));
         assertEquals(2, historyCount(orderId));
+        assertEquals(adminId, jdbc.queryForObject("""
+                SELECT actor_id FROM order_status_history
+                WHERE order_id=? AND reason='ADMIN_CANCEL'
+                """, Long.class, orderId));
     }
 
     @Test

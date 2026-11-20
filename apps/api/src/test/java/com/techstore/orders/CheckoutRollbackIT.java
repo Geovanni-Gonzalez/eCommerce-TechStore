@@ -74,6 +74,10 @@ class CheckoutRollbackIT {
                 "SELECT COUNT(*) FROM orders WHERE user_id=?",
                 Integer.class, userId));
         assertEquals(0, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
+                """, Integer.class, userId));
+        assertEquals(0, jdbc.queryForObject("""
                 SELECT COUNT(*) FROM stock_reservations sr
                 JOIN products p ON p.id=sr.product_id
                 WHERE p.id=?

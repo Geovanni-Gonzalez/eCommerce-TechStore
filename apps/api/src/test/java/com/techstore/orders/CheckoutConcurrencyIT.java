@@ -80,6 +80,11 @@ class CheckoutConcurrencyIT {
                 WHERE user_id IN (?, ?)
                 """, Integer.class, alice, bob));
         assertEquals(1, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history h
+                JOIN orders o ON o.id=h.order_id
+                WHERE o.user_id IN (?,?) AND h.reason='CREATED'
+                """, Integer.class, alice, bob));
+        assertEquals(1, jdbc.queryForObject("""
                 SELECT COUNT(*) FROM stock_reservations r
                 JOIN orders o ON o.id=r.order_id
                 WHERE o.user_id IN (?, ?) AND r.product_id=? AND r.status='RESERVED'
