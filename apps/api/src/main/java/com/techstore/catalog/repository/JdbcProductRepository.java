@@ -42,7 +42,7 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public List<Product> findActivePage(int limit, int offset) {
+    public List<Product> findActivePage(int limit, long offset) {
         String sql = SELECT_ACTIVE + """
                 ORDER BY id ASC
                 LIMIT ? OFFSET ?
