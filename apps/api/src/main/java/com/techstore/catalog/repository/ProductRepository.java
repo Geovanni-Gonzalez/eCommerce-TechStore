@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ProductRepository {
 
-    List<Product> findActivePage(int limit, int offset);
+    List<Product> findActivePage(int limit, long offset);
 
     Optional<Product> findActiveById(long id);
 
