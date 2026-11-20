@@ -9,7 +9,7 @@ const clone = () => structuredClone(original);
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
   assert.equal(result.operationCount, 17);
-  assert.equal(result.proposedCount, 3);
+  assert.equal(result.proposedCount, 2);
 });
 
 test("rechaza referencias inexistentes", () => {
@@ -84,4 +84,16 @@ test("cotización solo para CLIENT, disponible y con DTO exacto", () => {
   wrongDto.paths["/api/checkout/quote"].get.responses["200"]
     .content["application/json"].schema.$ref = "#/components/schemas/Order";
   assert.throws(() => validateContract(wrongDto), /Cotización debe devolver DTO/);
+});
+
+test("POST orders requiere Bearer y no acepta precios del navegador", () => {
+  const planned = clone();
+  planned.paths["/api/orders"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned),
+    /La creación transaccional de pedidos debe estar implementada/);
+
+  const withPrice = clone();
+  withPrice.components.schemas.CreateOrderRequest.properties.totalCrc = {type: "number"};
+  assert.throws(() => validateContract(withPrice),
+    /Nunca aceptar precios, productos o propietario/);
 });
