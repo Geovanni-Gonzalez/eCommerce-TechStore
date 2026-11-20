@@ -349,3 +349,9 @@ No se crea una interfaz administrativa ni se implementan pedidos todavía. Los t
 El backend expone `GET /api/cart`, `POST /api/cart/items`, `PATCH /api/cart/items/{productId}`, `DELETE /api/cart/items/{productId}` y `DELETE /api/cart`, accesibles con Bearer **CLIENT**. Flyway V5 incorpora `carts` y `cart_items` por usuario. El carrito no acepta precios del navegador: subtotal CRC y disponibilidad se calculan desde PostgreSQL. **No reserva stock** ni implementa checkout/pedidos; el frontend editable queda pendiente (BKL-029).
 
 Ejecutar `mvn -f apps/api/pom.xml clean test`; para pruebas PostgreSQL reales sobre la base aislada `techstore_test`, ejecutar `mvn -f apps/api/pom.xml clean verify`. CI también ejecuta `scripts/ci/smoke-cart.py` por HTTP. Consultar [documentación del carrito](docs/backend/CART.md).
+
+## BKL-030 — Modelo de Pedido y DetallePedido
+
+Flyway **V6** introduce `orders` y `order_items`, con estado inicial **PENDING**, pago exclusivamente **SIMULATED**, dirección de entrega copiada y snapshots históricos de cada producto (nombre, precio unitario, cantidad y total de línea). Las entidades Java `OrderDraft`, `Order`, `ShippingAddress`, `OrderItemSnapshot` y `OrderTotals` validan montos en CRC con `BigDecimal`. El puerto `OrderRepository` y su adaptador `JdbcOrderRepository` escriben cabecera e ítems en una transacción y limitan las consultas al propietario.
+
+**No se habilitaron todavía endpoints de pedidos ni se reserva stock:** los tres endpoints `/api/orders` siguen marcados como `planned` en OpenAPI hasta implementar validación de precio/stock y checkout (BKL-032/BKL-033). BKL-007 (revisión ERD integral) sigue pendiente. Ejecutar `mvn -f apps/api/pom.xml clean test` y, con `techstore_test` configurada, `mvn -f apps/api/pom.xml clean verify`. Leer [decisiones y pruebas del modelo de pedidos](docs/backend/ORDER_MODEL.md).
