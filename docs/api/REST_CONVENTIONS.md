@@ -7,6 +7,7 @@
 ## Estado y responsabilidades
 
 - **Implementado:** `GET /api/health` (BKL-008/BKL-010), `GET /api/products` y `GET /api/products/{id}` (BKL-018), `POST /api/auth/register` (BKL-015), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` y `GET /api/admin/check` (BKL-016). CI comprueba catálogo, registro y sesiones Bearer sobre PostgreSQL real. `GET /actuator/health` es propio de Spring Actuator.
+- **Implementado en BKL-028:** carrito de cliente autenticado (`GET/DELETE /api/cart`, `POST /api/cart/items`, `PATCH/DELETE /api/cart/items/{productId}`), respaldado por PostgreSQL. **La vista web del carrito sigue pendiente** (BKL-029).
 - **Planificado:** pedidos (BKL-030/BKL-033 y posteriores), panel administrativo completo, autenticación de la interfaz web. `/api/admin/check` solo demuestra autorización por rol.
 - El atributo OpenAPI `x-implementation-status: planned | implemented` distingue ambos estados de forma explícita. Documentar **no** habilita un endpoint.
 - **Frontend:** consume estas rutas por HTTP/JSON usando `apps/web/src/lib/api.ts` y `NEXT_PUBLIC_API_URL`.
@@ -20,6 +21,7 @@
 4. `200 OK` lectura exitosa; `201 Created` alta o pedido creado; `400 Bad Request` formato o validación de entrada; `401 Unauthorized` sin autenticación; `403 Forbidden` sin permiso; `404 Not Found` recurso inexistente o no accesible; `409 Conflict` conflicto de estado; `422 Unprocessable Entity` regla de negocio incumplida; `500 Internal Server Error` fallo inesperado.
 5. Listados paginados: `page` (desde 0), `size` (1–100, 12 por defecto) y respuesta `{items, page, size, totalElements, totalPages}`. Los productos públicos deben tener `active = true`.
 6. En el servidor se calcula el precio definitivo del pedido (subtotal, impuestos y envío). El cliente envía `productId` y `quantity`, **nunca** un total confiable.
+   El carrito muestra un subtotal estimado de todos sus artículos (incluidos los que ya no están disponibles); no reserva stock y `checkoutReady` indica si las líneas cumplen disponibilidad al consultar. El checkout debe **recalcular y validar**.
 7. Se implementó autenticación con token **Bearer opaco** revocable (`bearerFormat: Opaque`, no JWT) para rutas privadas y `/api/admin/**`; falta la futura verificación de propiedad de los pedidos cuando se implementen. El token vive 8 horas y solo se almacena su hash SHA-256 en PostgreSQL.
 
 ## Errores uniformes
