@@ -68,10 +68,19 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 8, "Se esperan 8 operaciones iniciales");
+  assert.equal(operationCount, 11, "Se esperan 11 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
-  assert.equal(proposedCount, 4, "Health, catálogo y registro están implementados");
+  for (const [path, method] of [
+    ["/api/auth/login", "post"],
+    ["/api/auth/logout", "post"],
+    ["/api/auth/me", "get"],
+    ["/api/admin/check", "get"]
+  ]) {
+    assert.equal(doc.paths[path][method]["x-implementation-status"], "implemented",
+      `Debe estar implementado: ${method} ${path}`);
+  }
+  assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);
@@ -80,6 +89,16 @@ export function validateContract(doc) {
 
   assert.ok(doc.components.schemas.Problem, "Falta esquema de errores");
   assert.ok(doc.components.securitySchemes.bearerAuth, "Falta seguridad para rutas privadas");
+  assert.equal(doc.components.securitySchemes.bearerAuth.bearerFormat, "Opaque",
+    "El contrato debe declarar Bearer opaco revocable, no JWT");
+  for (const [path, method] of [
+    ["/api/auth/logout", "post"],
+    ["/api/auth/me", "get"],
+    ["/api/admin/check", "get"]
+  ]) {
+    assert.deepEqual(doc.paths[path][method].security, [{ bearerAuth: [] }],
+      `Ruta privada sin Bearer: ${method} ${path}`);
+  }
   for (const path of ["/api/orders", "/api/orders/{id}"]) {
     for (const operation of Object.values(doc.paths[path])) {
       assert.deepEqual(operation.security, [{ bearerAuth: [] }], `Pedido sin autorización: ${path}`);
