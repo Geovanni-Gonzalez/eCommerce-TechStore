@@ -1,4 +1,3 @@
-
 package com.techstore.catalog.repository;
 
 import com.techstore.catalog.domain.Product;
@@ -10,6 +9,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Implementación de lectura del catálogo público mediante Spring JDBC.
+ *
+ * Las consultas filtran productos inactivos y ordenan la paginación por ID.
+ * El servicio decide los límites de paginación y el controlador los códigos HTTP.
+ */
 @Repository
 public class JdbcProductRepository implements ProductRepository {
 
@@ -43,24 +48,14 @@ public class JdbcProductRepository implements ProductRepository {
                 LIMIT ? OFFSET ?
                 """;
 
-        return jdbcTemplate.query(
-                sql,
-                PRODUCT_MAPPER,
-                limit,
-                offset
-        );
+        return jdbcTemplate.query(sql, PRODUCT_MAPPER, limit, offset);
     }
 
     @Override
     public Optional<Product> findActiveById(long id) {
         String sql = SELECT_ACTIVE + "AND id = ?";
 
-        List<Product> products = jdbcTemplate.query(
-                sql,
-                PRODUCT_MAPPER,
-                id
-        );
-
+        List<Product> products = jdbcTemplate.query(sql, PRODUCT_MAPPER, id);
         return products.stream().findFirst();
     }
 
@@ -72,23 +67,14 @@ public class JdbcProductRepository implements ProductRepository {
                 WHERE active = TRUE
                 """;
 
-        Long count = jdbcTemplate.queryForObject(
-                sql,
-                Long.class
-        );
-
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
         return count == null ? 0L : count;
     }
 
-    private static Product mapProduct(
-            ResultSet rs,
-            int rowNum
-    ) throws SQLException {
-
+    private static Product mapProduct(ResultSet rs, int rowNum)
+            throws SQLException {
         long categoryValue = rs.getLong("category_id");
-
-        Long categoryId =
-                rs.wasNull() ? null : categoryValue;
+        Long categoryId = rs.wasNull() ? null : categoryValue;
 
         return new Product(
                 rs.getLong("id"),
