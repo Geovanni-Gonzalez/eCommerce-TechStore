@@ -250,3 +250,35 @@ mvn -B -ntp -f apps/api/pom.xml clean verify
 
 El resultado de GitHub Actions debe verificarse en la pestaña **Checks** del PR antes del merge. Si un job falla, revisar su log y corregir la rama; no forzar el merge.
 
+
+## BKL-018 — API pública de productos (rama de desarrollo)
+
+El controlador `ProductController` expone dos consultas públicas:
+
+| Solicitud | Respuesta |
+|---|---|
+| `GET /api/products?page=0&size=12` | `200`: `ProductPage` con productos activos; página desde 0 y tamaño de 1 a 100 |
+| `GET /api/products/{id}` | `200`: producto activo; `404`: inexistente o inactivo |
+| Parámetros inválidos (por ejemplo, `page=-1`, `size=101`, `id=0`) | `400`: `application/problem+json` |
+
+El controlador solo traduce HTTP; las reglas y metadatos de paginación son responsabilidad de `ProductService`. El servicio utiliza la abstracción `ProductRepository` y la implementación `JdbcProductRepository` realiza consultas parametrizadas contra PostgreSQL. Los DTOs separan el modelo interno del JSON. Los campos opcionales `category` e `imageUrl` se omiten cuando no existen datos completos para responderlos.
+
+**Prueba automatizada:** `mvn -f apps/api/pom.xml clean verify` ejecuta pruebas unitarias del servicio y pruebas HTTP con MockMvc. Estas últimas utilizan un repositorio falso: **no son pruebas de integración con PostgreSQL**.
+
+**Prueba manual con PostgreSQL local:**
+
+```powershell
+docker compose -f infrastructure/compose.yaml up -d
+$env:SPRING_DATASOURCE_PASSWORD = "techstore_dev_only"
+npm run dev:api
+```
+
+En otra consola:
+
+```powershell
+Invoke-RestMethod "http://localhost:8080/api/products?page=0&size=12"
+Invoke-WebRequest "http://localhost:8080/api/products/999"
+```
+
+Con una base vacía, la primera solicitud debe devolver `items: []`, `totalElements: 0` y `totalPages: 0`; la segunda debe responder HTTP 404. Para probar listados reales se necesitan productos activos insertados de forma reproducible. La interfaz Next.js todavía no está conectada a este endpoint.
+
