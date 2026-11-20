@@ -80,7 +80,6 @@ export function validateContract(doc) {
     assert.equal(doc.paths[path][method]["x-implementation-status"], "implemented",
       `Debe estar implementado: ${method} ${path}`);
   }
-  assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
   for (const [route, method] of [["/api/cart", "get"], ["/api/cart", "delete"],
     ["/api/cart/items", "post"], ["/api/cart/items/{productId}", "patch"],
     ["/api/cart/items/{productId}", "delete"]]) {
@@ -89,6 +88,7 @@ export function validateContract(doc) {
     assert.equal(op["x-implementation-status"], "implemented", `Carrito pendiente: ${route}`);
     assert.deepEqual(op.security, [{ bearerAuth: [] }], `Carrito sin Bearer: ${route}`);
   }
+  assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);
