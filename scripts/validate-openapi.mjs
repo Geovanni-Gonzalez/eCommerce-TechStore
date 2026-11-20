@@ -98,7 +98,22 @@ export function validateContract(doc) {
     "#/components/schemas/CheckoutQuote", "Cotización debe devolver DTO");
   assert.ok(quote.responses["409"] && quote.responses["422"],
     "Cotización debe documentar carrito vacío e indisponible");
-  assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
+  const createdOrder = doc.paths["/api/orders"]?.post;
+  assert.equal(createdOrder?.["x-implementation-status"], "implemented",
+    "La creación transaccional de pedidos debe estar implementada");
+  assert.deepEqual(createdOrder.security, [{ bearerAuth: [] }],
+    "Crear pedido exige Bearer");
+  assert.equal(createdOrder.requestBody?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/CreateOrderRequest",
+    "El pedido debe requerir el body del checkout");
+  assert.deepEqual(Object.keys(doc.components.schemas.CreateOrderRequest?.properties ?? {}),
+    ["shippingAddress"],
+    "Nunca aceptar precios, productos o propietario en creación de pedido");
+  assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
+    "Historial de pedidos sigue pendiente");
+  assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",
+    "Detalle HTTP de pedido sigue pendiente");
+  assert.equal(proposedCount, 2, "Solo las lecturas de pedidos están planificadas");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);
