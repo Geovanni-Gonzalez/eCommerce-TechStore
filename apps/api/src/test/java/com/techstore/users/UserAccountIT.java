@@ -53,10 +53,11 @@ class UserAccountIT {
         var email = new UserEmail("  IT.CLIENT@TECHSTORE.TEST ");
         var passwordHash = hasher.hash(raw);
 
-        UserAccount saved = repository.createClient(email, passwordHash);
+        UserAccount saved = repository.createClient("Cliente de prueba", email, passwordHash);
 
         assertNotNull(saved.id());
         assertEquals("it.client@techstore.test", saved.email().value());
+        assertEquals("Cliente de prueba", saved.displayName());
         assertEquals(UserRole.CLIENTE, saved.role());
         assertTrue(saved.active());
         assertNotNull(saved.createdAt());
@@ -71,11 +72,11 @@ class UserAccountIT {
     @Test
     void duplicateEmailIsRejectedRegardlessOfOriginalCase() {
         var hash = hasher.hash("SoloPrueba#2026");
-        repository.createClient(new UserEmail("IT.DUP@TECHSTORE.TEST"), hash);
+        repository.createClient("Cliente duplicado", new UserEmail("IT.DUP@TECHSTORE.TEST"), hash);
 
         assertThrows(DataIntegrityViolationException.class,
                 () -> repository.createClient(
-                        new UserEmail("it.dup@techstore.test"), hash));
+                        "Otro nombre", new UserEmail("it.dup@techstore.test"), hash));
     }
 
     @Test
