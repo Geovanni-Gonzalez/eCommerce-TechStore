@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Locks de filas con orden estable y UPDATE condicional: incluso si dos clientes
