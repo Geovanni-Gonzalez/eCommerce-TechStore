@@ -1,7 +1,8 @@
 /**
- * Módulo de pedidos y checkout: snapshots BKL-030 y cotización BKL-032.
+ * Pedidos históricos BKL-030, cotización BKL-032 y checkout BKL-033.
  *
- * GoF Strategy se implementa con ShippingStrategy y dos políticas de envío;
- * Facade, Observer y la confirmación transaccional de pedidos siguen pendientes.
+ * GoF Strategy intercambia políticas de envío; GoF Facade coordina las
+ * operaciones transaccionales. BKL-068 añadirá un Observer concreto sobre
+ * OrderCreatedEvent cuando el pedido se confirme en base de datos.
  */
 package com.techstore.orders;
