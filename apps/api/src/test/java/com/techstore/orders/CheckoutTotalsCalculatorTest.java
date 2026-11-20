@@ -97,8 +97,12 @@ class CheckoutTotalsCalculatorTest {
                 () -> calc.calculate(List.of(line("-1.00", 1, 2, true))));
         assertThrows(IllegalArgumentException.class,
                 () -> calc.calculate(List.of(line("100.123", 1, 2, true))));
+        // Cada línea cabe en NUMERIC(14,2), pero su suma no.
         assertThrows(IllegalArgumentException.class,
-                () -> calc.calculate(List.of(line("9999999999.99", 99, 99, true))));
+                () -> calc.calculate(List.of(
+                        line("9999999999.99", 99, 99, true),
+                        new CartLine(4, "TEC-2", "Cable", crc("9999999999.99"),
+                                99, 99, true))));
     }
 
     @Test
