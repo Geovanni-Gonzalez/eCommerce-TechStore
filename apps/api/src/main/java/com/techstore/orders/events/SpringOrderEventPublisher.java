@@ -5,8 +5,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
- * Adaptador a eventos Spring. Por ahora NO hay Observer concreto ni outbox:
- * BKL-068 agregará un listener AFTER_COMMIT con evidencia auditable.
+ * Adaptador a eventos Spring. El Observer de BKL-068 registra auditoría
+ * AFTER_COMMIT mediante un listener desacoplado. No garantiza entrega durable.
  */
 @Component
 public final class SpringOrderEventPublisher implements OrderEventPublisher {
