@@ -16,6 +16,13 @@ server:
 techstore:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  checkout:
+    # Tarifas ilustrativas del prototipo, no cálculo fiscal productivo.
+    # FIXED o FREE_OVER_THRESHOLD; el cliente no escoge la estrategia.
+    shipping-policy: ${CHECKOUT_SHIPPING_POLICY:FREE_OVER_THRESHOLD}
+    shipping-fee-crc: ${CHECKOUT_SHIPPING_FEE_CRC:2500.00}
+    free-shipping-threshold-crc: ${CHECKOUT_FREE_SHIPPING_THRESHOLD_CRC:30000.00}
+    tax-rate: ${CHECKOUT_TAX_RATE:0.13}
 
 # Exponer únicamente la salud; no divulgar detalles internos en HTTP.
 management:
