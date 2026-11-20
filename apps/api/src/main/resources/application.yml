@@ -23,6 +23,9 @@ techstore:
     shipping-fee-crc: ${CHECKOUT_SHIPPING_FEE_CRC:2500.00}
     free-shipping-threshold-crc: ${CHECKOUT_FREE_SHIPPING_THRESHOLD_CRC:30000.00}
     tax-rate: ${CHECKOUT_TAX_RATE:0.13}
+    # BKL-027: TTL 30 min en V9; conciliar cada 60 segundos.
+    reservation-expiry-enabled: ${CHECKOUT_RESERVATION_EXPIRY_ENABLED:true}
+    reservation-expiry-scan-ms: ${CHECKOUT_RESERVATION_EXPIRY_SCAN_MS:60000}
 
 # Exponer únicamente la salud; no divulgar detalles internos en HTTP.
 management:

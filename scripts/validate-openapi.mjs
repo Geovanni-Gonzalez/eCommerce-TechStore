@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 17, "Se esperan 17 operaciones de API");
+  assert.equal(operationCount, 18, "Se esperan 18 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -109,6 +109,13 @@ export function validateContract(doc) {
   assert.deepEqual(Object.keys(doc.components.schemas.CreateOrderRequest?.properties ?? {}),
     ["shippingAddress"],
     "Nunca aceptar precios, productos o propietario en creación de pedido");
+  const cancellation = doc.paths["/api/orders/{id}/cancel"]?.post;
+  assert.equal(cancellation?.["x-implementation-status"], "implemented",
+    "La cancelación de reservas debe estar implementada");
+  assert.deepEqual(cancellation.security, [{ bearerAuth: [] }],
+    "Cancelar pedido exige Bearer");
+  assert.ok(cancellation.responses["204"] && cancellation.responses["404"]
+    && cancellation.responses["409"], "Faltan estados de cancelación");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",

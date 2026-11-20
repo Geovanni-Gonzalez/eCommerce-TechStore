@@ -5,3 +5,8 @@ spring:
     url: ${DB_TEST_URL:jdbc:postgresql://localhost:5432/techstore_test}
     username: ${DB_TEST_USERNAME:techstore}
     password: ${DB_TEST_PASSWORD:}
+
+# Vencimientos se activan manualmente en tests, no vía scheduler.
+techstore:
+  checkout:
+    reservation-expiry-enabled: false

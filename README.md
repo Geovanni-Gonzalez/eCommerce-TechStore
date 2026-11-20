@@ -372,3 +372,8 @@ La tasa ilustrativa (predeterminado 13 %), la tarifa (₡2500), el umbral (₡30
 ## BKL-068 — Observer GoF para pedidos
 
 La creación de pedidos notifica `OrderCreatedEvent` sin acoplar `CheckoutFacade` a la reacción. `OrderAuditListener` observa **AFTER_COMMIT** y `JdbcOrderEventAuditRepository` persiste una fila idempotente en `order_event_audit` (Flyway V8) con **REQUIRES_NEW**. No hay auditoría si el checkout hace rollback; no se envían correos, y no hay garantía de entrega tras un crash (no outbox). Ver [diagrama UML, demo y pruebas](docs/backend/ORDER_OBSERVER.md).
+
+
+## BKL-027 — Liberación y vencimiento transaccionales de reservas
+
+La API admite `POST /api/orders/{id}/cancel` con Bearer **CLIENT** propietario: un pedido `PENDING` se cancela y devuelve inventario exactamente una vez (repetir da 204); ajenos 404 y `CONFIRMED` 409. Flyway **V9** registra caducidad por reserva a **30 minutos**, y un recolector cada **60 segundos** cancela automáticamente pedidos vencidos. Es configurable mediante `CHECKOUT_RESERVATION_EXPIRY_ENABLED` y `CHECKOUT_RESERVATION_EXPIRY_SCAN_MS`; en pruebas de integración está deshabilitado y se invoca manualmente. **No procesa pagos**, no confirma pedidos y no cubre la máquina de estados administrativa BKL-045. Guía y pruebas: [Ciclo de reservas BKL-027](docs/backend/RESERVATION_LIFECYCLE.md).

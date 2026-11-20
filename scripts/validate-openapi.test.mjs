@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 17);
+  assert.equal(result.operationCount, 18);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -96,4 +96,14 @@ test("POST orders requiere Bearer y no acepta precios del navegador", () => {
   withPrice.components.schemas.CreateOrderRequest.properties.totalCrc = {type: "number"};
   assert.throws(() => validateContract(withPrice),
     /Nunca aceptar precios, productos o propietario/);
+});
+
+test("cancelación requiere Bearer y se declara implementada", () => {
+  const noAuth = clone();
+  delete noAuth.paths["/api/orders/{id}/cancel"].post.security;
+  assert.throws(() => validateContract(noAuth), /Cancelar pedido exige Bearer/);
+  const planned = clone();
+  planned.paths["/api/orders/{id}/cancel"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned),
+    /La cancelación de reservas debe estar implementada/);
 });
