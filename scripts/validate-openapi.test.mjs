@@ -22,7 +22,7 @@ test("rechaza referencias inexistentes", () => {
 test("rechaza rutas privadas sin autorización", () => {
   const invalid = clone();
   delete invalid.paths["/api/orders"].post.security;
-  assert.throws(() => validateContract(invalid), /Pedido sin autorización/);
+  assert.throws(() => validateContract(invalid), /Crear pedido exige Bearer/);
 });
 
 test("rechaza respuestas de error sin Problem Details", () => {
