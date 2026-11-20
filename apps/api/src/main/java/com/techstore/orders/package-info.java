@@ -1,7 +1,7 @@
 /**
- * Módulo de pedidos: agregado y snapshots comerciales históricos (BKL-030).
+ * Módulo de pedidos y checkout: snapshots BKL-030 y cotización BKL-032.
  *
- * No expone aún creación HTTP ni inventario reservado: cálculo final, Facade,
- * Strategy de envío y Observer de pedido se incorporarán al checkout posterior.
+ * GoF Strategy se implementa con ShippingStrategy y dos políticas de envío;
+ * Facade, Observer y la confirmación transaccional de pedidos siguen pendientes.
  */
 package com.techstore.orders;
