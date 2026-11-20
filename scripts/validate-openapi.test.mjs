@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 11);
+  assert.equal(result.operationCount, 16);
   assert.equal(result.proposedCount, 3);
 });
 
@@ -60,4 +60,13 @@ test("rechaza declarar login pendiente", () => {
   const invalid = clone();
   invalid.paths["/api/auth/login"].post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(invalid), /Debe estar implementado: post/);
+});
+
+test("rechaza carrito sin Bearer y documentarlo como planificado", () => {
+  const withoutBearer = clone();
+  delete withoutBearer.paths["/api/cart"].get.security;
+  assert.throws(() => validateContract(withoutBearer), /Carrito sin Bearer/);
+  const planned = clone();
+  planned.paths["/api/cart/items"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned), /Carrito pendiente/);
 });
