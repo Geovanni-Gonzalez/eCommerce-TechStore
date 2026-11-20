@@ -377,3 +377,8 @@ La creación de pedidos notifica `OrderCreatedEvent` sin acoplar `CheckoutFacade
 ## BKL-027 — Liberación y vencimiento transaccionales de reservas
 
 La API admite `POST /api/orders/{id}/cancel` con Bearer **CLIENT** propietario: un pedido `PENDING` se cancela y devuelve inventario exactamente una vez (repetir da 204); ajenos 404 y `CONFIRMED` 409. Flyway **V9** registra caducidad por reserva a **30 minutos**, y un recolector cada **60 segundos** cancela automáticamente pedidos vencidos. Es configurable mediante `CHECKOUT_RESERVATION_EXPIRY_ENABLED` y `CHECKOUT_RESERVATION_EXPIRY_SCAN_MS`; en pruebas de integración está deshabilitado y se invoca manualmente. **No procesa pagos**, no confirma pedidos y no cubre la máquina de estados administrativa BKL-045. Guía y pruebas: [Ciclo de reservas BKL-027](docs/backend/RESERVATION_LIFECYCLE.md).
+
+
+## BKL-045 — Estados de pedidos con historial auditable
+
+Flyway **V10** añade `order_status_history`. El checkout registra `CREATED` y las cancelaciones del cliente, el scheduler y ADMIN registran `CLIENT_CANCEL`, `EXPIRED` o `ADMIN_CANCEL`, siempre en la misma transacción que devuelve stock. `PATCH /api/admin/orders/{id}/status` permite cancelar PENDING (Bearer ADMIN) y `GET /api/admin/orders/{id}/history` consulta la traza. **CONFIRMED queda exclusivamente para el flujo de pagos BKL-040**. Ver [BKL-045 — historial y transiciones](docs/backend/ORDER_STATUS_LIFECYCLE.md).

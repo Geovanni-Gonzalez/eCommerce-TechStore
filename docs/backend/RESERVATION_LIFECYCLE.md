@@ -70,3 +70,8 @@ Ejecutar `mvn -f apps/api/pom.xml clean verify` con PostgreSQL efímero `techsto
 ## Límites
 
 BKL-040 debe implementar confirmación de pedido + consumo de reserva con pago aprobado, y BKL-045 el resto de transiciones y el historial de cambios. Este flujo no emite evento de cancelación, no reembolsa pagos y no garantiza notificaciones externas. No es un motor completo de pedidos productivo.
+
+
+## Complemento BKL-045 — historial de transiciones
+
+Las cancelaciones cliente y las liberaciones por vencimiento ahora registran el cambio de estado en Flyway V10, en la misma transacción que la restitución de inventario. ADMIN dispone de cancelación PENDING y consulta del historial, sin poder confirmar un pago. Véase [BKL-045: transiciones e historial](ORDER_STATUS_LIFECYCLE.md).

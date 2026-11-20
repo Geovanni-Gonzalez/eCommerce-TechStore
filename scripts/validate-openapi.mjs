@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 18, "Se esperan 18 operaciones de API");
+  assert.equal(operationCount, 20, "Se esperan 20 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -116,6 +116,22 @@ export function validateContract(doc) {
     "Cancelar pedido exige Bearer");
   assert.ok(cancellation.responses["204"] && cancellation.responses["404"]
     && cancellation.responses["409"], "Faltan estados de cancelación");
+  const adminStatus = doc.paths["/api/admin/orders/{id}/status"]?.patch;
+  const adminHistory = doc.paths["/api/admin/orders/{id}/history"]?.get;
+  assert.equal(adminStatus?.["x-implementation-status"], "implemented",
+    "BKL-045: transición administrativa debe estar implementada");
+  assert.equal(adminHistory?.["x-implementation-status"], "implemented",
+    "BKL-045: historial debe estar implementado");
+  assert.deepEqual(adminStatus.security, [{ bearerAuth: [] }],
+    "BKL-045: cambio administrativo exige Bearer");
+  assert.deepEqual(adminHistory.security, [{ bearerAuth: [] }],
+    "BKL-045: historial administrativo exige Bearer");
+  assert.equal(adminHistory.responses["200"]?.content?.["application/json"]?.schema?.items?.$ref,
+    "#/components/schemas/OrderStatusHistoryEntry",
+    "BKL-045: el historial requiere DTO auditable");
+  assert.equal(adminStatus.requestBody?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/UpdateOrderStatusRequest",
+    "BKL-045: solo se admite body de estado");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",
