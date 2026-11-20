@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
  */
 public record UserAccount(
         Long id,
+        String displayName,
         UserEmail email,
         PasswordHash passwordHash,
         UserRole role,
