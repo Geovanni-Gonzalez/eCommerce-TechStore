@@ -337,3 +337,9 @@ Ver [documentación del módulo de usuarios](docs/backend/USER_ACCOUNTS.md) para
 **Pruebas:** `mvn -f apps/api/pom.xml clean test` (unitarias/MockMvc) o, con la base aislada `techstore_test`, `mvn -f apps/api/pom.xml clean verify` (incluye PostgreSQL real). GitHub Actions también ejecuta `scripts/ci/smoke-register.py` por HTTP contra el JAR. El registro **no** inicia sesión; login/logout quedan para BKL-016.
 
 Ver [diseño y documentación del registro](docs/backend/REGISTER.md).
+
+## BKL-016 — Login, logout y autorización Bearer
+
+`POST /api/auth/login` autentica correo/contraseña BCrypt y devuelve `{accessToken, tokenType:"Bearer", user}`. El token es opaco, aleatorio (256 bits), caduca en ocho horas y solo su SHA-256 se almacena en PostgreSQL por medio de **Flyway V4**. `POST /api/auth/logout` revoca ese token inmediatamente (204); `GET /api/auth/me` exige autenticación y `GET /api/admin/check` exige rol ADMIN (401/403 Problem Details). Spring Security mantiene públicos los endpoints de salud, catálogo y registro.
+
+No se crea una interfaz administrativa ni se implementan pedidos todavía. Los tokens Bearer **no son JWT** y no se deben imprimir, guardar en Git o persistir en `localStorage`. Ver [decisiones, pruebas y amenazas pendientes de autenticación](docs/backend/AUTHENTICATION.md). Ejecutar `mvn -f apps/api/pom.xml clean test` o, con PostgreSQL `techstore_test` configurado, `mvn -f apps/api/pom.xml clean verify`.
