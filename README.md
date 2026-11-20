@@ -329,3 +329,11 @@ Los activos deben aparecer, el inactivo no; el detalle de un producto inexistent
 La migración V2 añade `users` con correo único normalizado, hash BCrypt, roles `CLIENTE`/`ADMIN` y fechas de auditoría. Se implementan los contratos y las clases de persistencia y hashing para los futuros casos de uso de registro/autenticación. **Los endpoints auth siguen pendientes** (BKL-015/BKL-016).
 
 Ver [documentación del módulo de usuarios](docs/backend/USER_ACCOUNTS.md) para diseño SOLID/GRASP, pruebas y configuración de la base `techstore_test`.
+
+## BKL-015 — Registro seguro de clientes
+
+`POST /api/auth/register` crea una cuenta `CLIENTE` y devuelve `201` con `{id, displayName, email, role: "CLIENT"}`. Los errores de validación usan `400 application/problem+json` y los correos duplicados `409`. La contraseña se almacena únicamente como hash BCrypt (máximo 72 bytes UTF-8 para evitar truncamiento); jamás aparece en la respuesta. La migración Flyway V3 incorpora `display_name`.
+
+**Pruebas:** `mvn -f apps/api/pom.xml clean test` (unitarias/MockMvc) o, con la base aislada `techstore_test`, `mvn -f apps/api/pom.xml clean verify` (incluye PostgreSQL real). GitHub Actions también ejecuta `scripts/ci/smoke-register.py` por HTTP contra el JAR. El registro **no** inicia sesión; login/logout quedan para BKL-016.
+
+Ver [diseño y documentación del registro](docs/backend/REGISTER.md).
