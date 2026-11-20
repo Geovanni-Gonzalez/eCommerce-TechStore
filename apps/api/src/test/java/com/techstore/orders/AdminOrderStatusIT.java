@@ -94,7 +94,7 @@ class AdminOrderStatusIT {
         mvc.perform(patch("/api/admin/orders/" + orderId + "/status")
                 .header("Authorization", bearer(admin))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"status\":\"CANCELLED\"}")
+                .content("{\"status\":\"CANCELLED\"}"))
                 .andExpect(status().isNoContent())
                 .andExpect(header().string("Cache-Control", "no-store"));
         assertEquals("CANCELLED", orderStatus(orderId));
