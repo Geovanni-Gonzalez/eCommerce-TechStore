@@ -22,7 +22,7 @@ import org.springframework.stereotype.Repository;
 public class JdbcUserAccountRepository implements UserAccountRepository {
 
     private static final String FIELDS = """
-            id, email, password_hash, role, active, created_at, updated_at
+            id, display_name, email, password_hash, role, active, created_at, updated_at
             """;
 
     private static final RowMapper<UserAccount> MAPPER =
@@ -55,23 +55,26 @@ public class JdbcUserAccountRepository implements UserAccountRepository {
     }
 
     @Override
-    public UserAccount createClient(UserEmail email, PasswordHash passwordHash) {
+    public UserAccount createClient(
+            String displayName, UserEmail email, PasswordHash passwordHash) {
+        Objects.requireNonNull(displayName, "displayName");
         Objects.requireNonNull(email, "email");
         Objects.requireNonNull(passwordHash, "passwordHash");
 
         // No se acepta un rol externo en el flujo de alta.
         // La restricción UNIQUE en PostgreSQL resuelve duplicados concurrentes.
         return Objects.requireNonNull(jdbcTemplate.queryForObject(
-                "INSERT INTO users (email, password_hash, role) "
-                        + "VALUES (?, ?, 'CLIENTE') RETURNING " + FIELDS,
+                "INSERT INTO users (display_name, email, password_hash, role) "
+                        + "VALUES (?, ?, ?, 'CLIENTE') RETURNING " + FIELDS,
                 MAPPER,
-                email.value(), passwordHash.value()));
+                displayName, email.value(), passwordHash.value()));
     }
 
     private static UserAccount mapAccount(ResultSet rs, int rowNum)
             throws SQLException {
         return new UserAccount(
                 rs.getLong("id"),
+                rs.getString("display_name"),
                 new UserEmail(rs.getString("email")),
                 new PasswordHash(rs.getString("password_hash")),
                 UserRole.valueOf(rs.getString("role")),
