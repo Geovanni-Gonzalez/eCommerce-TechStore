@@ -70,6 +70,7 @@ public final class JdbcCheckoutStockRepository implements CheckoutStockRepositor
     }
 
     @Override
+    @Transactional
     public void releaseReservations(long orderId) {
         // Serializa liberación/consumo entre procesos y garantiza transiciones
         // como máximo una vez. El consumidor deberá ejecutar @Transactional.
