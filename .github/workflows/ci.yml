@@ -80,6 +80,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # PostgreSQL de CI, aislado y efímero; nunca usar datos reales.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: techstore_test
+          POSTGRES_USER: techstore
+          POSTGRES_PASSWORD: techstore_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U techstore -d techstore_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_TEST_URL: jdbc:postgresql://localhost:5432/techstore_test
+      DB_TEST_USERNAME: techstore
+      DB_TEST_PASSWORD: techstore_ci_only
+
     steps:
       - name: Obtener código
         uses: actions/checkout@v7
@@ -92,7 +113,41 @@ jobs:
           cache: maven
           cache-dependency-path: apps/api/pom.xml
 
-      # Ejecuta las pruebas existentes y verifica que el backend empaqueta.
-      # Los tests actuales son unitarios: no necesitan PostgreSQL.
-      - name: Compilar backend y ejecutar pruebas
+      # Surefire: tests unitarios. Failsafe: *IT.java sobre PostgreSQL test.
+      - name: Compilar backend y ejecutar pruebas unitarias e integración
         run: mvn -B -ntp -f apps/api/pom.xml clean verify
+
+      - name: Cargar catálogo de demostración en base efímera
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_container="$(docker ps -q --filter ancestor=postgres:17-alpine | head -n 1)"
+          test -n "$db_container"
+          docker exec -i "$db_container" psql -U techstore -d techstore_test -v ON_ERROR_STOP=1 \
+            < scripts/dev/seed-catalog.sql
+
+      - name: Arrancar API real y comprobar endpoints HTTP
+        shell: bash
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/techstore_test
+          DB_USERNAME: techstore
+          SPRING_DATASOURCE_PASSWORD: techstore_ci_only
+        run: |
+          set -euo pipefail
+          java -jar apps/api/target/techstore-api-0.1.0-SNAPSHOT.jar \
+            > /tmp/techstore-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true; cat /tmp/techstore-api.log' EXIT
+
+          for attempt in {1..45}; do
+            if curl --fail --silent http://127.0.0.1:8080/api/health -o /dev/null; then
+              break
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              echo "El proceso Java terminó antes de responder HTTP"
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent --show-error http://127.0.0.1:8080/api/health
+          python3 scripts/ci/smoke-catalog.py
