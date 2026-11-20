@@ -6,8 +6,8 @@
 
 ## Estado y responsabilidades
 
-- **Implementado:** `GET /api/health` (BKL-008/BKL-010); `GET /actuator/health` es propio de Spring Actuator, no una operación comercial de este contrato.
-- **Planificado:** catálogo `GET /api/products` y `GET /api/products/{id}` (BKL-018), registro e ingreso (BKL-015/BKL-016), pedidos (BKL-030/BKL-033 y posteriores).
+- **Implementado:** `GET /api/health` (BKL-008/BKL-010), `GET /api/products` y `GET /api/products/{id}` (BKL-018). La ejecución de CI comprueba los endpoints de catálogo por HTTP con PostgreSQL real. `GET /actuator/health` es propio de Spring Actuator.
+- **Planificado:** registro e ingreso (BKL-015/BKL-016), pedidos (BKL-030/BKL-033 y posteriores).
 - El atributo OpenAPI `x-implementation-status: planned | implemented` distingue ambos estados de forma explícita. Documentar **no** habilita un endpoint.
 - **Frontend:** consume estas rutas por HTTP/JSON usando `apps/web/src/lib/api.ts` y `NEXT_PUBLIC_API_URL`.
 - **Backend:** implementa DTOs, controladores, validaciones, persistencia y seguridad en sus issues. Actualizar el contrato y las pruebas en el mismo PR que cambie una ruta.
@@ -26,7 +26,7 @@
 
 Respuestas de error como `application/problem+json` siguiendo **Problem Details**, con campos `type`, `title`, `status`; opcionalmente `detail`, `instance`, `code` y `errors: [{field, message}]`. Evitar trazas técnicas o contraseñas en respuestas.
 
-Ejemplo ilustrativo para un `400` (aún no implementado):
+Ejemplo ilustrativo de un `400` con validaciones de campos (esa variante aún no está implementada):
 
 ```json
 {

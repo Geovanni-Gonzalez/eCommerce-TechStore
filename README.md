@@ -250,3 +250,77 @@ mvn -B -ntp -f apps/api/pom.xml clean verify
 
 El resultado de GitHub Actions debe verificarse en la pestaña **Checks** del PR antes del merge. Si un job falla, revisar su log y corregir la rama; no forzar el merge.
 
+
+## BKL-018 — API pública de productos (rama de desarrollo)
+
+El controlador `ProductController` expone dos consultas públicas:
+
+| Solicitud | Respuesta |
+|---|---|
+| `GET /api/products?page=0&size=12` | `200`: `ProductPage` con productos activos; página desde 0 y tamaño de 1 a 100 |
+| `GET /api/products/{id}` | `200`: producto activo; `404`: inexistente o inactivo |
+| Parámetros inválidos (por ejemplo, `page=-1`, `size=101`, `id=0`) | `400`: `application/problem+json` |
+
+El controlador solo traduce HTTP; las reglas y metadatos de paginación son responsabilidad de `ProductService`. El servicio utiliza la abstracción `ProductRepository` y la implementación `JdbcProductRepository` realiza consultas parametrizadas contra PostgreSQL. Los DTOs separan el modelo interno del JSON. Los campos opcionales `category` e `imageUrl` se omiten cuando no existen datos completos para responderlos.
+
+**Prueba automatizada:** `mvn -f apps/api/pom.xml clean verify` ejecuta pruebas unitarias del servicio y pruebas HTTP con MockMvc. Estas últimas utilizan un repositorio falso: **no son pruebas de integración con PostgreSQL**.
+
+**Prueba manual con PostgreSQL local:**
+
+```powershell
+docker compose -f infrastructure/compose.yaml up -d
+$env:SPRING_DATASOURCE_PASSWORD = "techstore_dev_only"
+npm run dev:api
+```
+
+En otra consola:
+
+```powershell
+Invoke-RestMethod "http://localhost:8080/api/products?page=0&size=12"
+Invoke-WebRequest "http://localhost:8080/api/products/999"
+```
+
+Con una base vacía, la primera solicitud debe devolver `items: []`, `totalElements: 0` y `totalPages: 0`; la segunda debe responder HTTP 404. Para probar listados reales se necesitan productos activos insertados de forma reproducible. La interfaz Next.js todavía no está conectada a este endpoint.
+
+
+## BKL-018 — Integración real con PostgreSQL y demo reproducible
+
+La rama incorpora pruebas de dos niveles: **unitarias/HTTP aisladas** (`mvn test`) y **PostgreSQL + Flyway + JDBC + HTTP** (`mvn verify`, mediante Failsafe y `ProductCatalogIT`). El workflow de CI levanta PostgreSQL 17 efímero (`techstore_test`) y ejecuta ambos niveles, además de un smoke HTTP sobre la API ejecutándose como proceso Java.
+
+### Ejecutar pruebas de integración en Windows
+
+Usa Docker Desktop y el PostgreSQL local ya configurado. Crea una base de datos **separada** para las pruebas (solo si no existe):
+
+```powershell
+docker compose -f infrastructure/compose.yaml up -d
+docker exec techstore-postgres psql -U techstore -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='techstore_test'"
+# Si el resultado está vacío:
+docker exec techstore-postgres createdb -U techstore techstore_test
+```
+
+Configura la contraseña **solo en tu terminal**, sin guardarla en Git (la siguiente es la clave local de ejemplo; utiliza tu clave si la cambiaste):
+
+```powershell
+$env:DB_TEST_PASSWORD = "techstore_dev_only"
+mvn -f apps/api/pom.xml clean verify
+```
+
+`ProductCatalogIT` usa `application-integration.yml` y se niega a modificar cualquier base cuyo nombre no sea **`techstore_test`**. Sus datos se escriben en transacciones que se revierten. **No ejecutes estas pruebas contra la base de desarrollo `techstore` ni contra producción**. Para ejecutar únicamente las pruebas unitarias y MockMvc aislado, usa `mvn -f apps/api/pom.xml clean test` (no requiere PostgreSQL).
+
+### Insertar catálogo de demostración local (opcional)
+
+Esta operación modifica solo la base `techstore` de desarrollo; es manual e idempotente y **no forma parte de Flyway**:
+
+```powershell
+docker cp scripts/dev/seed-catalog.sql techstore-postgres:/tmp/seed-catalog.sql
+docker exec techstore-postgres psql -U techstore -d techstore -v ON_ERROR_STOP=1 -f /tmp/seed-catalog.sql
+```
+
+Agrega dos productos activos (`DEMO-MOUSE-01`, `DEMO-KEY-01`) y uno inactivo (`DEMO-HIDDEN-01`). En una terminal, inicia la API con `SPRING_DATASOURCE_PASSWORD` configurada y luego consulta:
+
+```powershell
+Invoke-RestMethod "http://localhost:8080/api/products?page=0&size=12"
+```
+
+Los activos deben aparecer, el inactivo no; el detalle de un producto inexistente responde 404. El script `scripts/ci/smoke-catalog.py` prueba ese comportamiento sobre HTTP en la base efímera de GitHub Actions. **No modifiques `V1__create_catalog_tables.sql`** para agregar datos de prueba.
+

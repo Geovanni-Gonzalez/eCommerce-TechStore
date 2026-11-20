@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato de referencia para frontend y backend. Solo GET /api/health existe actualmente; las rutas de catálogo, autenticación y pedidos son propuestas para issues futuros. Prototipo académico: pagos exclusivamente simulados y sin datos de tarjeta."
+    "description": "Contrato de referencia para frontend y backend. GET /api/health y los dos GET del catálogo están implementados y validados; registro, login y pedidos siguen planificados. Prototipo académico: pagos exclusivamente simulados y sin datos de tarjeta."
   },
   "servers": [
     {
@@ -116,7 +116,7 @@
             "description": "Cantidad de registros por página"
           }
         ],
-        "x-implementation-status": "planned"
+        "x-implementation-status": "implemented"
       }
     },
     "/api/products/{id}": {
@@ -180,7 +180,7 @@
             }
           }
         ],
-        "x-implementation-status": "planned"
+        "x-implementation-status": "implemented"
       }
     },
     "/api/auth/register": {

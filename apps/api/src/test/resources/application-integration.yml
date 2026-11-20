@@ -1,0 +1,7 @@
+# Perfil exclusivo de pruebas de integración: NUNCA reutilizar la base "techstore".
+# Maven Failsafe (*IT.java) utiliza una base PostgreSQL independiente.
+spring:
+  datasource:
+    url: ${DB_TEST_URL:jdbc:postgresql://localhost:5432/techstore_test}
+    username: ${DB_TEST_USERNAME:techstore}
+    password: ${DB_TEST_PASSWORD:}
