@@ -96,6 +96,7 @@ public final class JdbcCheckoutStockRepository implements CheckoutStockRepositor
     }
 
     @Override
+    @Transactional
     public void consumeReservations(long orderId) {
         jdbc.update("""
                 UPDATE stock_reservations
