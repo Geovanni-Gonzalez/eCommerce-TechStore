@@ -343,3 +343,9 @@ Ver [diseño y documentación del registro](docs/backend/REGISTER.md).
 `POST /api/auth/login` autentica correo/contraseña BCrypt y devuelve `{accessToken, tokenType:"Bearer", user}`. El token es opaco, aleatorio (256 bits), caduca en ocho horas y solo su SHA-256 se almacena en PostgreSQL por medio de **Flyway V4**. `POST /api/auth/logout` revoca ese token inmediatamente (204); `GET /api/auth/me` exige autenticación y `GET /api/admin/check` exige rol ADMIN (401/403 Problem Details). Spring Security mantiene públicos los endpoints de salud, catálogo y registro.
 
 No se crea una interfaz administrativa ni se implementan pedidos todavía. Los tokens Bearer **no son JWT** y no se deben imprimir, guardar en Git o persistir en `localStorage`. Ver [decisiones, pruebas y amenazas pendientes de autenticación](docs/backend/AUTHENTICATION.md). Ejecutar `mvn -f apps/api/pom.xml clean test` o, con PostgreSQL `techstore_test` configurado, `mvn -f apps/api/pom.xml clean verify`.
+
+## BKL-028 — Carrito persistente de clientes
+
+El backend expone `GET /api/cart`, `POST /api/cart/items`, `PATCH /api/cart/items/{productId}`, `DELETE /api/cart/items/{productId}` y `DELETE /api/cart`, accesibles con Bearer **CLIENT**. Flyway V5 incorpora `carts` y `cart_items` por usuario. El carrito no acepta precios del navegador: subtotal CRC y disponibilidad se calculan desde PostgreSQL. **No reserva stock** ni implementa checkout/pedidos; el frontend editable queda pendiente (BKL-029).
+
+Ejecutar `mvn -f apps/api/pom.xml clean test`; para pruebas PostgreSQL reales sobre la base aislada `techstore_test`, ejecutar `mvn -f apps/api/pom.xml clean verify`. CI también ejecuta `scripts/ci/smoke-cart.py` por HTTP. Consultar [documentación del carrito](docs/backend/CART.md).
