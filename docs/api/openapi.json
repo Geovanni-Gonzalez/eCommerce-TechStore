@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato de referencia frontend/backend. Se implementaron salud, catálogo, registro, login, logout, consulta de sesión y comprobación administrativa; pedidos siguen planificados. Autenticación con tokens Bearer opacos revocables, NO JWT. Pagos del prototipo exclusivamente simulados."
+    "description": "Contrato frontend/backend. Implementados: salud, catálogo, registro, autenticación y carrito persistente protegido. Pedidos/checkout siguen planificados. Bearer opaco revocable, NO JWT; pagos exclusivamente simulados."
   },
   "servers": [
     {
@@ -31,6 +31,10 @@
     {
       "name": "Admin",
       "description": "Comprobación mínima de acceso administrativo; panel de administración pendiente"
+    },
+    {
+      "name": "Cart",
+      "description": "Carrito persistente del cliente autenticado; no reserva stock ni confirma precios"
     }
   ],
   "paths": {
@@ -717,6 +721,338 @@
         },
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/cart": {
+      "get": {
+        "tags": [
+          "Cart"
+        ],
+        "operationId": "getMyCart",
+        "summary": "Consultar mi carrito persistente",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Carrito del cliente; subtotal estimado en CRC, no es una orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token Bearer requerido o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      },
+      "delete": {
+        "tags": [
+          "Cart"
+        ],
+        "operationId": "clearMyCart",
+        "summary": "Vaciar mi carrito",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminación idempotente; sin contenido"
+          },
+          "401": {
+            "description": "Token Bearer requerido o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/cart/items": {
+      "post": {
+        "tags": [
+          "Cart"
+        ],
+        "operationId": "addCartItem",
+        "summary": "Agregar cantidad a un producto de mi carrito",
+        "description": "Agrega la cantidad o incrementa la existente. No reserva inventario ni admite precios o IDs de usuarios enviados por el cliente.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCartItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Carrito del cliente; subtotal estimado en CRC, no es una orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token Bearer requerido o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto inexistente/inactivo o línea no encontrada",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stock insuficiente o límite por artículo excedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/cart/items/{productId}": {
+      "patch": {
+        "tags": [
+          "Cart"
+        ],
+        "operationId": "setCartItemQuantity",
+        "summary": "Establecer cantidad absoluta de una línea",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productId",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCartQuantityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Carrito del cliente; subtotal estimado en CRC, no es una orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token Bearer requerido o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto inexistente/inactivo o línea no encontrada",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stock insuficiente o límite por artículo excedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      },
+      "delete": {
+        "tags": [
+          "Cart"
+        ],
+        "operationId": "removeCartItem",
+        "summary": "Eliminar un producto del carrito de forma idempotente",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productId",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminación idempotente; sin contenido"
+          },
+          "400": {
+            "description": "Identificador inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token Bearer requerido o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -1329,6 +1665,122 @@
           "status",
           "role"
         ]
+      },
+      "CartItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productId",
+          "sku",
+          "name",
+          "quantity",
+          "stock",
+          "available",
+          "unitPriceCrc",
+          "lineSubtotalCrc"
+        ],
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sku": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Verdadero solo si el producto sigue activo y tiene stock suficiente"
+          },
+          "unitPriceCrc": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Precio vigente de catálogo en CRC"
+          },
+          "lineSubtotalCrc": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Precio vigente multiplicado por cantidad; CRC"
+          }
+        }
+      },
+      "Cart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "totalItems",
+          "subtotalCrc",
+          "checkoutReady"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItem"
+            }
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "subtotalCrc": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal estimado de todos los artículos, incluso no disponibles. Sin impuestos/envío. Checkout debe recalcular y validar stock/precio."
+          },
+          "checkoutReady": {
+            "type": "boolean",
+            "description": "Todos los artículos siguen activos y cuentan con stock suficiente; false en carrito vacío"
+          }
+        }
+      },
+      "AddCartItemRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productId",
+          "quantity"
+        ],
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          }
+        }
+      },
+      "UpdateCartQuantityRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "quantity"
+        ],
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          }
+        }
       }
     }
   }
