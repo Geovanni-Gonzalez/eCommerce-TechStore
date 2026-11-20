@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato de referencia para frontend y backend. Están implementados GET /api/health, los dos GET de catálogo y POST /api/auth/register; login y pedidos permanecen planificados. Prototipo académico: pagos exclusivamente simulados y sin datos de tarjeta."
+    "description": "Contrato de referencia frontend/backend. Se implementaron salud, catálogo, registro, login, logout, consulta de sesión y comprobación administrativa; pedidos siguen planificados. Autenticación con tokens Bearer opacos revocables, NO JWT. Pagos del prototipo exclusivamente simulados."
   },
   "servers": [
     {
@@ -27,6 +27,10 @@
     {
       "name": "Orders",
       "description": "Pedidos persistentes planificados"
+    },
+    {
+      "name": "Admin",
+      "description": "Comprobación mínima de acceso administrativo; panel de administración pendiente"
     }
   ],
   "paths": {
@@ -251,7 +255,7 @@
           "Auth"
         ],
         "operationId": "loginUser",
-        "summary": "Iniciar sesión y recibir token",
+        "summary": "Iniciar sesión y recibir un token Bearer opaco y revocable",
         "responses": {
           "200": {
             "description": "Autenticación válida",
@@ -304,7 +308,8 @@
             }
           }
         },
-        "x-implementation-status": "planned"
+        "x-implementation-status": "implemented",
+        "description": "Credenciales verificadas contra BCrypt; tokens aleatorios de 256 bits, vigencia de 8 horas y hash persistido en PostgreSQL."
       }
     },
     "/api/orders": {
@@ -566,6 +571,152 @@
         ],
         "x-implementation-status": "planned"
       }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "logoutUser",
+        "summary": "Cerrar sesión y revocar el token actual",
+        "description": "Revoca inmediatamente el token Bearer presentado; no se puede volver a usar.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sesión revocada; respuesta sin contenido"
+          },
+          "401": {
+            "description": "Token Bearer ausente, caducado o inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado del servidor",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "getCurrentUser",
+        "summary": "Consultar identidad del usuario autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado del servidor",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/admin/check": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "checkAdminAccess",
+        "summary": "Comprobar acceso exclusivo de ADMIN",
+        "description": "Ruta de demostración de autorización por rol; no es un panel de gestión.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acceso administrativo autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El usuario no tiene rol de administración",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado del servidor",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -573,8 +724,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Esquema propuesto; aún no implementado."
+        "bearerFormat": "Opaque",
+        "description": "Token opaco aleatorio Bearer de 256 bits, duración de 8 horas y revocación en PostgreSQL; NO es un JWT. Usar HTTPS fuera del desarrollo local."
       }
     },
     "schemas": {
@@ -808,12 +959,12 @@
       },
       "AuthSession": {
         "type": "object",
-        "description": "Contrato preliminar de autenticación Bearer; implementación pendiente.",
+        "description": "Respuesta de autenticación Bearer opaca, revocable en logout.",
         "additionalProperties": false,
         "properties": {
           "accessToken": {
             "type": "string",
-            "description": "Token temporal; no exponer en logs"
+            "description": "Token Bearer opaco temporal; no se almacena ni imprime en logs; mantenerlo fuera de localStorage."
           },
           "tokenType": {
             "type": "string",
@@ -1155,6 +1306,28 @@
           "type",
           "title",
           "status"
+        ]
+      },
+      "AdminAccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "AUTHORIZED"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "role"
         ]
       }
     }

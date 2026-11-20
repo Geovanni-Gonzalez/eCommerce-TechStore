@@ -1,0 +1,87 @@
+package com.techstore.users.security;
+
+import com.techstore.users.repository.SessionTokenRepository;
+import com.techstore.users.repository.UserAccountRepository;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+/**
+ * Política de mínimo privilegio para toda la API.
+ *
+ * No hay cookies de sesión, HTTP Basic ni login por formulario. Los clientes
+ * envían Authorization: Bearer <token> en cada solicitud privada. El esquema
+ * es opaco y revocable, NO JWT.
+ */
+@Configuration
+public class ApiSecurityConfig {
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http, SessionTokenRepository sessions,
+            UserAccountRepository users, AccessTokenCodec codec) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .requestCache(AbstractHttpConfigurer::disable)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> {})
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, failure) ->
+                                writeProblem(response, 401, "No autenticado",
+                                        "Se requiere un token Bearer válido",
+                                        "AUTHENTICATION_REQUIRED"))
+                        .accessDeniedHandler((request, response, failure) ->
+                                writeProblem(response, 403, "Acceso denegado",
+                                        "No tienes permiso para acceder a este recurso",
+                                        "ACCESS_DENIED")))
+                .authorizeHttpRequests(access -> access
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/health", "/actuator/health",
+                                "/api/products", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().denyAll())
+                .addFilterBefore(
+                        new BearerTokenAuthenticationFilter(sessions, users, codec),
+                        UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    // Evita que Spring Boot genere y escriba una contraseña temporal en logs:
+    // las cuentas se comprueban exclusivamente mediante AuthenticationService.
+    @Bean
+    UserDetailsService unusedFormLoginService() {
+        return username -> {
+            throw new UsernameNotFoundException("Login HTTP Basic deshabilitado");
+        };
+    }
+
+    private static void writeProblem(
+            HttpServletResponse response, int status, String title,
+            String detail, String code) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/problem+json");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+        response.getWriter().write(
+                "{\"type\":\"about:blank\",\"title\":\"" + title
+                + "\",\"status\":" + status + ",\"detail\":\"" + detail
+                + "\",\"code\":\"" + code + "\"}");
+    }
+}

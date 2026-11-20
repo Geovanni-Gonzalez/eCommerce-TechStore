@@ -6,8 +6,8 @@
 
 ## Estado y responsabilidades
 
-- **Implementado:** `GET /api/health` (BKL-008/BKL-010), `GET /api/products` y `GET /api/products/{id}` (BKL-018), y `POST /api/auth/register` (BKL-015). CI comprueba catálogo y registro con PostgreSQL real. `GET /actuator/health` es propio de Spring Actuator.
-- **Planificado:** inicio/cierre de sesión y autorización (BKL-016), pedidos (BKL-030/BKL-033 y posteriores).
+- **Implementado:** `GET /api/health` (BKL-008/BKL-010), `GET /api/products` y `GET /api/products/{id}` (BKL-018), `POST /api/auth/register` (BKL-015), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` y `GET /api/admin/check` (BKL-016). CI comprueba catálogo, registro y sesiones Bearer sobre PostgreSQL real. `GET /actuator/health` es propio de Spring Actuator.
+- **Planificado:** pedidos (BKL-030/BKL-033 y posteriores), panel administrativo completo, autenticación de la interfaz web. `/api/admin/check` solo demuestra autorización por rol.
 - El atributo OpenAPI `x-implementation-status: planned | implemented` distingue ambos estados de forma explícita. Documentar **no** habilita un endpoint.
 - **Frontend:** consume estas rutas por HTTP/JSON usando `apps/web/src/lib/api.ts` y `NEXT_PUBLIC_API_URL`.
 - **Backend:** implementa DTOs, controladores, validaciones, persistencia y seguridad en sus issues. Actualizar el contrato y las pruebas en el mismo PR que cambie una ruta.
@@ -20,7 +20,7 @@
 4. `200 OK` lectura exitosa; `201 Created` alta o pedido creado; `400 Bad Request` formato o validación de entrada; `401 Unauthorized` sin autenticación; `403 Forbidden` sin permiso; `404 Not Found` recurso inexistente o no accesible; `409 Conflict` conflicto de estado; `422 Unprocessable Entity` regla de negocio incumplida; `500 Internal Server Error` fallo inesperado.
 5. Listados paginados: `page` (desde 0), `size` (1–100, 12 por defecto) y respuesta `{items, page, size, totalElements, totalPages}`. Los productos públicos deben tener `active = true`.
 6. En el servidor se calcula el precio definitivo del pedido (subtotal, impuestos y envío). El cliente envía `productId` y `quantity`, **nunca** un total confiable.
-7. Las rutas de pedidos requerirán token Bearer y verificación de propiedad por usuario. El esquema `bearerAuth` es una **decisión provisional**; no hay aún implementación de tokens o sesiones.
+7. Se implementó autenticación con token **Bearer opaco** revocable (`bearerFormat: Opaque`, no JWT) para rutas privadas y `/api/admin/**`; falta la futura verificación de propiedad de los pedidos cuando se implementen. El token vive 8 horas y solo se almacena su hash SHA-256 en PostgreSQL.
 
 ## Errores uniformes
 
@@ -45,7 +45,7 @@ Ejemplo ilustrativo de un `400` con validaciones de campos (el registro devuelve
 
 - Prototipo local; no exponer tokens ni contraseñas en logs o control de versiones. Contraseñas deberán almacenarse como hashes seguros.
 - El pago será **SIMULATED**: nunca enviar números de tarjeta, CVV ni datos bancarios.
-- El registro seguro de clientes está implementado en BKL-015. La autorización real y la política de sesión serán implementadas y probadas en BKL-016. La decisión actual sobre Bearer/JWT es preliminar y puede revisarse si el equipo elige sesiones.
+- El registro seguro está implementado en BKL-015 y la autenticación, revocación y control por roles en BKL-016. Se usa Bearer opaco (no JWT) y no se envían cookies; para producción siguen pendientes HTTPS obligatorio, rate limiting y protecciones adicionales.
 - Campos `imageUrl` y `category` en `Product` son opcionales; todavía no se implementa almacenamiento de imágenes.
 - El modelo SQL actual usa `price_crc`, `stock`, `active` y `category_id` en `products`; los DTOs del contrato añaden nombres camelCase y datos derivados. No deben interpretarse como migraciones ya aplicadas.
 

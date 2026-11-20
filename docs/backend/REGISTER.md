@@ -60,4 +60,4 @@ $payload = @{ displayName = "Ana Pérez"; email = "ana@example.com"; password = 
 Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" -Method Post -ContentType "application/json" -Body $payload
 ```
 
-**Pendiente (BKL-016):** inicio/cierre de sesión, autenticación real, autorización de rutas privadas, defensas contra abuso y gestión de contraseñas/sesiones. Un endpoint de registro funcional no implica que la aplicación tenga login o seguridad de sesiones.
+**Actualización BKL-016:** inicio/cierre de sesión, Bearer opaco revocable y autorización por roles ya se implementaron; consultar [AUTHENTICATION.md](AUTHENTICATION.md). Siguen pendientes protecciones avanzadas contra abuso, recuperación de contraseña y autenticación de la interfaz Next.js.

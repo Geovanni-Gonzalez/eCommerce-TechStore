@@ -8,8 +8,8 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 8);
-  assert.equal(result.proposedCount, 4);
+  assert.equal(result.operationCount, 11);
+  assert.equal(result.proposedCount, 3);
 });
 
 test("rechaza referencias inexistentes", () => {
@@ -42,4 +42,22 @@ test("el registro seguro se mantiene marcado como implementado", () => {
   const invalid = clone();
   invalid.paths["/api/auth/register"].post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(invalid), /El registro seguro debe estar marcado como implementado/);
+});
+
+test("rechaza documentar los tokens como JWT cuando son opacos", () => {
+  const invalid = clone();
+  invalid.components.securitySchemes.bearerAuth.bearerFormat = "JWT";
+  assert.throws(() => validateContract(invalid), /Bearer opaco revocable/);
+});
+
+test("rechaza ruta admin sin autorización Bearer", () => {
+  const invalid = clone();
+  delete invalid.paths["/api/admin/check"].get.security;
+  assert.throws(() => validateContract(invalid), /Ruta privada sin Bearer/);
+});
+
+test("rechaza declarar login pendiente", () => {
+  const invalid = clone();
+  invalid.paths["/api/auth/login"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(invalid), /Debe estar implementado: post/);
 });
