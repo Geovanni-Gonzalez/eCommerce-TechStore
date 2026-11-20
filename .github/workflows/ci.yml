@@ -154,3 +154,4 @@ jobs:
           python3 scripts/ci/smoke-register.py
           python3 scripts/ci/smoke-auth.py
           python3 scripts/ci/smoke-cart.py
+          python3 scripts/ci/smoke-quote.py

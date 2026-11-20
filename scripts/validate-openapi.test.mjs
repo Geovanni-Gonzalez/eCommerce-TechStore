@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 16);
+  assert.equal(result.operationCount, 17);
   assert.equal(result.proposedCount, 3);
 });
 
@@ -69,4 +69,19 @@ test("rechaza carrito sin Bearer y documentarlo como planificado", () => {
   const planned = clone();
   planned.paths["/api/cart/items"].post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(planned), /Carrito pendiente/);
+});
+
+test("cotización solo para CLIENT, disponible y con DTO exacto", () => {
+  const withoutBearer = clone();
+  delete withoutBearer.paths["/api/checkout/quote"].get.security;
+  assert.throws(() => validateContract(withoutBearer), /Cotización debe exigir Bearer/);
+
+  const planned = clone();
+  planned.paths["/api/checkout/quote"].get["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned), /Cotización debe estar implementada/);
+
+  const wrongDto = clone();
+  wrongDto.paths["/api/checkout/quote"].get.responses["200"]
+    .content["application/json"].schema.$ref = "#/components/schemas/Order";
+  assert.throws(() => validateContract(wrongDto), /Cotización debe devolver DTO/);
 });

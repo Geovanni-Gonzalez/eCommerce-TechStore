@@ -3,7 +3,7 @@
   "info": {
     "title": "TechStore API - contrato inicial",
     "version": "0.1.0",
-    "description": "Contrato frontend/backend. Implementados: salud, catálogo, registro, autenticación y carrito persistente protegido. Pedidos/checkout siguen planificados. Bearer opaco revocable, NO JWT; pagos exclusivamente simulados."
+    "description": "Contrato frontend/backend del prototipo. Implementados: salud, catálogo, registro, sesión Bearer opaca, carrito y cotización de checkout. Los pedidos y el pago siguen planificados/simulados; la cotización no reserva stock."
   },
   "servers": [
     {
@@ -35,6 +35,10 @@
     {
       "name": "Cart",
       "description": "Carrito persistente del cliente autenticado; no reserva stock ni confirma precios"
+    },
+    {
+      "name": "Checkout",
+      "description": "Cotización provisional de importes del carrito. Strategy de envío configurable; no confirma pedido ni reserva stock."
     }
   ],
   "paths": {
@@ -1053,6 +1057,82 @@
         },
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/checkout/quote": {
+      "get": {
+        "tags": [
+          "Checkout"
+        ],
+        "operationId": "getCheckoutQuote",
+        "summary": "Cotizar impuestos, envío y total del carrito autenticado",
+        "description": "GET sin body ni precios enviados por navegador. Lee artículos y precios vigentes de PostgreSQL; impuesto ilustrativo configurable y Strategy FIXED / FREE_OVER_THRESHOLD. No reserva stock ni confirma un pedido. Totales deben recalcularse bajo transacción en el checkout posterior.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cotización provisional calculada en servidor",
+            "headers": {
+              "Cache-Control": {
+                "description": "no-store; los importes son transitorios",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutQuote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer ausente, inválido o revocado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La cuenta autenticada no tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El carrito contiene artículos inactivos o sin stock suficiente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Carrito vacío: no es posible cotizar",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -1779,6 +1859,42 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 99
+          }
+        }
+      },
+      "CheckoutQuote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "totalItems",
+          "totals",
+          "shippingPolicy",
+          "estimateOnly"
+        ],
+        "properties": {
+          "totalItems": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Cantidad total de unidades del carrito autenticado"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/OrderTotals"
+          },
+          "shippingPolicy": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "FREE_OVER_THRESHOLD"
+            ],
+            "description": "Strategy seleccionada por configuración del servidor, no por el cliente"
+          },
+          "estimateOnly": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "La cotización no reserva stock, no confirma precios ni genera pedidos"
           }
         }
       }
