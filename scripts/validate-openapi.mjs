@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 11, "Se esperan 11 operaciones de API");
+  assert.equal(operationCount, 16, "Se esperan 16 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -81,6 +81,14 @@ export function validateContract(doc) {
       `Debe estar implementado: ${method} ${path}`);
   }
   assert.equal(proposedCount, 3, "Solo las tres operaciones de pedidos están planificadas");
+  for (const [route, method] of [["/api/cart", "get"], ["/api/cart", "delete"],
+    ["/api/cart/items", "post"], ["/api/cart/items/{productId}", "patch"],
+    ["/api/cart/items/{productId}", "delete"]]) {
+    const op = doc.paths[route]?.[method];
+    assert.ok(op, `Ruta de carrito faltante: ${method} ${route}`);
+    assert.equal(op["x-implementation-status"], "implemented", `Carrito pendiente: ${route}`);
+    assert.deepEqual(op.security, [{ bearerAuth: [] }], `Carrito sin Bearer: ${route}`);
+  }
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);
