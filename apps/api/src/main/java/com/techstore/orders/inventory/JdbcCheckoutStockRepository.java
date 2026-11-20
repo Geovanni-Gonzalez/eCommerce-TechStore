@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
  * compiten por la última unidad, nunca se produce stock negativo.
  */
 @Repository
-public final class JdbcCheckoutStockRepository implements CheckoutStockRepository {
+public class JdbcCheckoutStockRepository implements CheckoutStockRepository {
     private final JdbcTemplate jdbc;
 
     public JdbcCheckoutStockRepository(JdbcTemplate jdbc) {
