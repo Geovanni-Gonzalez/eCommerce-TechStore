@@ -65,7 +65,7 @@ class UserDomainTest {
     void passwordHashAndUserAccountToStringDoNotRevealSecrets() {
         var hash = new BcryptPasswordHasher().hash("EjemploDePrueba#2026");
         var account = new UserAccount(
-                1L, new UserEmail("cliente@techstore.test"),
+                1L, "Cliente", new UserEmail("cliente@techstore.test"),
                 hash, UserRole.CLIENTE, true, null, null);
 
         assertEquals("[REDACTED]", hash.toString());
