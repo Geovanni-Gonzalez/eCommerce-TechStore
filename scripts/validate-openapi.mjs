@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 27, "Se esperan 27 operaciones de API");
+  assert.equal(operationCount, 28, "Se esperan 28 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -220,6 +220,24 @@ export function validateContract(doc) {
   assert.deepEqual(doc.components.schemas.PaymentReconciliationResult?.properties?.status?.enum,
     ["RECEIVED", "CONFIRMED_SIMULATED", "DECLINED", "NEEDS_REVIEW"],
     "BKL-040: distinguir estados de confirmación simulada y conciliación");
+  const paymentIncidents =
+    doc.paths["/api/admin/orders/{orderId}/payment-incidents"]?.get;
+  assert.equal(paymentIncidents?.["x-implementation-status"], "implemented",
+    "BKL-041: debe existir consulta ADMIN de incidencias");
+  assert.deepEqual(paymentIncidents?.security, [{ bearerAuth: [] }],
+    "BKL-041: consultar incidencias requiere Bearer ADMIN");
+  assert.equal(paymentIncidents?.requestBody, undefined,
+    "BKL-041: lectura de incidencias sin cuerpo");
+  assert.equal(paymentIncidents?.parameters?.find(p =>
+    p.in === "path" && p.name === "orderId")?.required, true,
+    "BKL-041: se requiere ID del pedido");
+  assert.equal(paymentIncidents?.responses?.["200"]?.content?.["application/json"]?.schema?.items?.$ref,
+    "#/components/schemas/PaymentIncident",
+    "BKL-041: respuesta es lista de incidencias, no confirmación");
+  assert.deepEqual(doc.components.schemas.PaymentIncident?.properties?.reason?.enum,
+    ["AMBIGUOUS_AUTHORIZATION","AWAITING_VERIFIED_APPROVAL",
+     "LATE_APPROVAL","EVIDENCE_MISMATCH"],
+    "BKL-041: causas de riesgo consistentes con Flyway V15");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",

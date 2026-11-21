@@ -167,7 +167,22 @@ class SandboxPaymentConfirmationIT {
     @Test
     void cancelledOrderKeepsLateApprovalForManualReconciliation() throws Exception {
         var attempt = authorize(PaymentOutcome.APPROVED);
-        lifecycle.cancelOwned(userId, orderId);
+        // BKL-041 bloquea una cancelación nueva cuando ya existe aprobación.
+        assertThrows(com.techstore.orders.service.OrderNotCancellableException.class,
+                () -> lifecycle.cancelOwned(userId, orderId));
+        // Simular un pedido CANCELLED heredado de antes del guard de BKL-041:
+        // el webhook tardío aún debe quedar como incidencia, nunca confirmar.
+        jdbc.update("""
+                UPDATE stock_reservations SET status='RELEASED'
+                WHERE order_id=?
+                """, orderId);
+        jdbc.update("UPDATE products SET stock=stock+2 WHERE id=?", productId);
+        jdbc.update("UPDATE orders SET status='CANCELLED' WHERE id=?", orderId);
+        jdbc.update("""
+                INSERT INTO order_status_history(
+                    order_id,from_status,to_status,actor_type,actor_id,reason)
+                VALUES(?,'PENDING','CANCELLED','CLIENT',?,'CLIENT_CANCEL')
+                """,orderId,userId);
         String raw = payload(uniqueEvent(), attempt.providerReference(),
                 attempt.totalCrc().toPlainString(), "APPROVED");
         mvc.perform(signedPost(raw, Instant.now().getEpochSecond()))
@@ -178,6 +193,7 @@ class SandboxPaymentConfirmationIT {
         assertEquals(5, stock());
         assertEquals(2, historyCount());
         assertEquals("CLIENT_CANCEL", lastHistoryReason());
+        assertEquals("LATE_APPROVAL", incidentReason());
     }
 
     @Test
@@ -196,9 +212,16 @@ class SandboxPaymentConfirmationIT {
         assertEquals("RESERVED", reservationStatus());
         assertEquals(3, stock());
         assertEquals(1, historyCount());
-        assertTrue(lifecycle.expireOne(orderId));
-        assertEquals(5, stock());
-        assertEquals("CANCELLED", orderStatus());
+        // No liberar inventario mientras haya aprobación simulada pendiente:
+        // aunque el evento sea tardío, requiere investigación humana.
+        assertFalse(lifecycle.expireOne(orderId));
+        assertEquals(3, stock());
+        assertEquals("PENDING", orderStatus());
+        assertTrue(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM payment_reconciliation_incidents
+                    WHERE order_id=? AND reason='LATE_APPROVAL')
+                """, Boolean.class, orderId));
     }
 
     @Test
@@ -216,6 +239,7 @@ class SandboxPaymentConfirmationIT {
         assertEquals("RESERVED", reservationStatus());
         assertEquals(3, stock());
         assertEquals(1, historyCount());
+        assertEquals("EVIDENCE_MISMATCH", incidentReason());
     }
 
     @Test
@@ -381,6 +405,13 @@ class SandboxPaymentConfirmationIT {
                 WHERE a.order_id=? LIMIT 1
                 """, String.class, orderId);
     }
+    private String incidentReason() {
+        return jdbc.queryForObject("""
+                SELECT reason FROM payment_reconciliation_incidents
+                WHERE order_id=? ORDER BY id DESC LIMIT 1
+                """, String.class, orderId);
+    }
+
     private int eventCount() {
         return jdbc.queryForObject("""
                 SELECT COUNT(*) FROM payment_webhook_events e
@@ -413,6 +444,10 @@ class SandboxPaymentConfirmationIT {
     @AfterEach
     void cleanup() {
         if (userId < 1) return;
+        jdbc.update("""
+                DELETE FROM payment_reconciliation_incidents
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
+                """, userId);
         jdbc.update("""
                 DELETE FROM payment_webhook_events
                 WHERE payment_attempt_id IN (SELECT id FROM payment_attempts

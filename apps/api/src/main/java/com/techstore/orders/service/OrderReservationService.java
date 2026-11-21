@@ -1,6 +1,9 @@
 package com.techstore.orders.service;
 
 import com.techstore.orders.domain.OrderStatus;
+import com.techstore.orders.payments.PaymentExposurePolicy;
+import com.techstore.orders.payments.PaymentIncidentReason;
+import com.techstore.orders.payments.PaymentIncidentRepository;
 import com.techstore.orders.inventory.CheckoutStockRepository;
 import com.techstore.orders.inventory.OrderReservationLifecycleRepository;
 import com.techstore.orders.history.OrderChangeActor;
@@ -19,12 +22,17 @@ public class OrderReservationService {
     private final OrderReservationLifecycleRepository orders;
     private final CheckoutStockRepository stock;
     private final OrderStatusHistoryRepository history;
+    private final PaymentExposurePolicy exposure;
+    private final PaymentIncidentRepository incidents;
 
     public OrderReservationService(OrderReservationLifecycleRepository orders,
-            CheckoutStockRepository stock, OrderStatusHistoryRepository history) {
+            CheckoutStockRepository stock, OrderStatusHistoryRepository history,
+            PaymentExposurePolicy exposure, PaymentIncidentRepository incidents) {
         this.orders = Objects.requireNonNull(orders);
         this.stock = Objects.requireNonNull(stock);
         this.history = Objects.requireNonNull(history);
+        this.exposure = Objects.requireNonNull(exposure);
+        this.incidents = Objects.requireNonNull(incidents);
     }
 
     @Transactional
@@ -40,6 +48,7 @@ public class OrderReservationService {
         if (status != OrderStatus.PENDING) {
             throw new OrderNotCancellableException();
         }
+        ensureSafeToRelease(orderId);
         stock.releaseReservations(orderId);
         orders.markCancelled(orderId);
         history.recordTransition(orderId, OrderStatus.PENDING, OrderStatus.CANCELLED,
@@ -54,6 +63,12 @@ public class OrderReservationService {
         }
         OrderStatus status = orders.lockOrder(orderId).orElse(null);
         if (status != OrderStatus.PENDING || !orders.hasExpiredReservations(orderId)) {
+            return false;
+        }
+        PaymentIncidentReason reason = exposure.blockingReason(orderId);
+        if (reason != null) {
+            // Una decisión de retención debe COMMIT para que ADMIN pueda verla.
+            incidents.record(orderId, reason, null);
             return false;
         }
         stock.releaseReservations(orderId);
@@ -77,10 +92,18 @@ public class OrderReservationService {
         if (current != OrderStatus.PENDING) {
             throw new OrderNotCancellableException();
         }
+        ensureSafeToRelease(orderId);
         stock.releaseReservations(orderId);
         orders.markCancelled(orderId);
         history.recordTransition(orderId, OrderStatus.PENDING, OrderStatus.CANCELLED,
                 OrderChangeActor.ADMIN, actorId, OrderChangeReason.ADMIN_CANCEL);
+    }
+
+    private void ensureSafeToRelease(long orderId) {
+        if (exposure.blockingReason(orderId) != null) {
+            // No se presume que hubo rechazo ni que es seguro liberar stock.
+            throw new OrderNotCancellableException();
+        }
     }
 
     @Transactional

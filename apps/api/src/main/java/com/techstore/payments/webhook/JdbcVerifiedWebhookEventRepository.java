@@ -2,6 +2,8 @@ package com.techstore.payments.webhook;
 
 import com.techstore.payments.PaymentAttemptStatus;
 import com.techstore.payments.PaymentOutcome;
+import com.techstore.orders.payments.PaymentIncidentReason;
+import com.techstore.orders.payments.PaymentIncidentRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
@@ -18,9 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class JdbcVerifiedWebhookEventRepository
         implements VerifiedWebhookEventRepository {
     private final JdbcTemplate jdbc;
+    private final PaymentIncidentRepository incidents;
 
-    public JdbcVerifiedWebhookEventRepository(JdbcTemplate jdbc) {
+    public JdbcVerifiedWebhookEventRepository(
+            JdbcTemplate jdbc, PaymentIncidentRepository incidents) {
         this.jdbc = Objects.requireNonNull(jdbc);
+        this.incidents = Objects.requireNonNull(incidents);
     }
 
     @Override
@@ -84,6 +89,11 @@ public class JdbcVerifiedWebhookEventRepository
                 """, (rs, row) -> rs.getLong(1), event.eventId(), attempt.id(),
                 digest, event.outcome().name());
         if (!inserted.isEmpty()) {
+            // Mantener incidencia persistente incluso si auto-confirm está OFF.
+            if (event.outcome() == PaymentOutcome.APPROVED && isLate(event.orderId())) {
+                incidents.record(event.orderId(), PaymentIncidentReason.LATE_APPROVAL,
+                        inserted.getFirst());
+            }
             return new WebhookEventReceipt(
                     inserted.getFirst(), event.eventId(), attempt.id(), false);
         }
@@ -93,6 +103,16 @@ public class JdbcVerifiedWebhookEventRepository
             throw new WebhookConflictException();
         }
         return checkReplay(concurrent.getFirst(), attempt.id(), event, digest);
+    }
+
+    private boolean isLate(long orderId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT o.status<>'PENDING'
+                  OR EXISTS (SELECT 1 FROM stock_reservations r
+                    WHERE r.order_id=o.id AND
+                        (r.status<>'RESERVED' OR r.expires_at<=CURRENT_TIMESTAMP))
+                FROM orders o WHERE o.id=?
+                """, Boolean.class, orderId));
     }
 
     private List<EventRow> byEventId(String eventId) {

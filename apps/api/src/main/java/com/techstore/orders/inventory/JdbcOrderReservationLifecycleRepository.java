@@ -38,10 +38,19 @@ public class JdbcOrderReservationLifecycleRepository
         if (limit < 1 || limit > 1000) {
             throw new IllegalArgumentException("Límite de expiración inválido");
         }
+        // Priorizar pedidos sin intento potencialmente ejecutado evita que
+        // cientos de incidencias retenidas bloqueen la liberación de otros.
         return jdbc.query("""
-                SELECT DISTINCT order_id FROM stock_reservations
-                WHERE status = 'RESERVED' AND expires_at <= CURRENT_TIMESTAMP
-                ORDER BY order_id LIMIT ?
+                SELECT q.order_id FROM (
+                    SELECT DISTINCT r.order_id FROM stock_reservations r
+                    WHERE r.status='RESERVED' AND r.expires_at<=CURRENT_TIMESTAMP
+                ) q
+                ORDER BY EXISTS (
+                    SELECT 1 FROM payment_attempts a
+                    WHERE a.order_id=q.order_id
+                    AND a.status IN ('STARTED','UNKNOWN','SIMULATED_APPROVED')),
+                    q.order_id
+                LIMIT ?
                 """, (rs, row) -> rs.getLong(1), limit);
     }
 
