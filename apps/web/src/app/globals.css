@@ -91,3 +91,43 @@ p { line-height: 1.7; }
 }
 .sandbox-submit:hover:not(:disabled) { background: #11365e; }
 .sandbox-submit:disabled { opacity: .7; cursor: progress; }
+
+/* BKL-039: estados verificados con contraste, sin significado en la URL. */
+.payment-result__form { display: grid; gap: .6rem; max-width: 420px; }
+.payment-result__form label { font-weight: 700; margin-top: .4rem; }
+.payment-result__form input {
+  width: 100%;
+  min-height: 2.7rem;
+  padding: .6rem .8rem;
+  border: 1px solid #7d8da2;
+  border-radius: .45rem;
+  font: inherit;
+}
+.payment-result__form button { margin-top: .65rem; }
+.payment-result__status {
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--color-border);
+  border-left: .35rem solid #586b82;
+  border-radius: .5rem;
+  margin: 1rem 0;
+  background: #f7fafc;
+}
+.payment-result__status h2 { margin-top: .3rem; }
+.payment-result__status--approved { border-left-color: #24724e; }
+.payment-result__status--rejected { border-left-color: #a04436; }
+.payment-result__status--pending { border-left-color: #946617; }
+.payment-result__link-button {
+  border: 0;
+  padding: .3rem 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.payment-result__form input:focus-visible,
+.payment-result__link-button:focus-visible {
+  outline: 3px solid #d87018;
+  outline-offset: 3px;
+}

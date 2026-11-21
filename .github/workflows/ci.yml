@@ -51,6 +51,9 @@ jobs:
       - name: Probar contrato OpenAPI
         run: npm run test:api-contract
 
+      - name: Probar clasificación de resultados de pago confiables
+        run: node --experimental-strip-types --test apps/web/src/lib/payment-result.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
@@ -70,6 +73,17 @@ jobs:
             sleep 1
           done
 
+          # Las rutas /aprobado y /rechazado no son evidencia de éxito:
+          # deben renderizar solo el formulario hasta consultar el backend.
+          for path in /pagos/resultado /pagos/resultado/aprobado /pagos/resultado/rechazado /pagos/resultado/pendiente; do
+            html="$(curl --fail --silent --show-error "http://127.0.0.1:3000${path}?orderId=1&attemptId=1")"
+            echo "$html" | grep -q "Estado de tu simulación"
+            if echo "$html" | grep -q "El backend confirmó este pedido"; then
+              echo "ERROR: resultado aprobado por URL sin autenticación"
+              exit 1
+            fi
+            echo "HTTP 200 sin resultado no verificado: ${path}"
+          done
           for path in / /productos /carrito /login; do
             curl --fail --silent --show-error "http://127.0.0.1:3000${path}" -o /dev/null
             echo "HTTP 200: ${path}"

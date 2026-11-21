@@ -130,7 +130,16 @@ export default function SandboxCheckoutClient() {
         <div role="status">
           <h2>Simulación completada</h2>
           <p>Estado del intento: <strong>{result.status}</strong>.</p>
-          <p>El pedido continúa pendiente de confirmación real.</p>
+          <p>
+            Esta simulación no acredita cobro bancario. La confirmación del
+            pedido depende de una conciliación verificada en el backend.
+          </p>
+          <p>
+            <Link href={"/pagos/resultado?orderId=" + result.orderId +
+              "&attemptId=" + result.id}>
+              Consultar resultado verificado del pedido
+            </Link>
+          </p>
           {result.providerReference && <p>Referencia de sandbox: {result.providerReference}</p>}
         </div>
       )}

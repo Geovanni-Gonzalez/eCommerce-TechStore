@@ -64,6 +64,7 @@ export default function PaymentResultClient() {
   const [phase, setPhase] = useState<Phase>("access");
   const [verified, setVerified] = useState<VerifiedPaymentResult | null>(null);
   const [message, setMessage] = useState("");
+  const [hasAccess, setHasAccess] = useState(false);
   const session = useRef<string | null>(null);
 
   const valid = orderId !== null && attemptId !== null;
@@ -120,11 +121,13 @@ export default function PaymentResultClient() {
       }
       // El token solo vive en un ref de esta pestaña: nunca URL/cookie/storage.
       session.current = data.accessToken;
+      setHasAccess(true);
       setPassword("");
       setEmail("");
       await check(data.accessToken);
     } catch (failure: unknown) {
       session.current = null;
+      setHasAccess(false);
       setPassword("");
       setVerified(null);
       setMessage(failure instanceof Error ? failure.message : "Acceso no disponible.");
@@ -135,6 +138,7 @@ export default function PaymentResultClient() {
   async function closeSession() {
     const bearer = session.current;
     session.current = null;
+    setHasAccess(false);
     setVerified(null);
     setPassword("");
     setEmail("");
@@ -210,9 +214,11 @@ export default function PaymentResultClient() {
               <h2>No se pudo verificar</h2>
               <p>{message}</p>
               <p>No mostramos un resultado de pago sin consultar al servidor.</p>
-              {session.current && (
+              {hasAccess && (
                 <button type="button" className="sandbox-submit"
-                  onClick={() => void check(session.current!)}>
+                  onClick={() => {
+                    if (session.current) void check(session.current);
+                  }}>
                   Reintentar consulta
                 </button>
               )}
@@ -238,7 +244,7 @@ export default function PaymentResultClient() {
             </div>
           )}
 
-          {session.current && phase !== "checking" && (
+          {hasAccess && phase !== "checking" && (
             <p>
               <button type="button" className="payment-result__link-button"
                 onClick={() => void closeSession()}>
