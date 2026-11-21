@@ -10,9 +10,9 @@ export default function Home() {
         tecnológicos.
       </p>
       <p>
-        Estamos preparando el catálogo, el carrito y el acceso a cuentas.
-        Esta versión presenta la navegación y la estructura visual sobre la
-        cual construiremos las funcionalidades.
+        Ya puedes explorar productos y consultar precios y existencias reales
+        desde la API. El carrito editable y el acceso general a cuentas
+        continúan en desarrollo.
       </p>
       <Link className="button-link" href="/productos">
         Explorar catálogo

@@ -57,6 +57,9 @@ jobs:
       - name: Probar historial de pedidos y controles de privacidad BKL-043
         run: node --experimental-strip-types --test apps/web/src/lib/order-history.test.mjs
 
+      - name: Probar catálogo y detalle BKL-019
+        run: node --experimental-strip-types --test apps/web/src/lib/catalog.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
@@ -306,6 +309,7 @@ jobs:
           # Flyway ya migró una BD totalmente efímera; seed no productivo.
           docker exec -i "$db_container" psql -U techstore -d techstore_test \
             -v ON_ERROR_STOP=1 < scripts/dev/seed-catalog.sql
+          node scripts/ci/e2e-catalog.mjs
           node scripts/ci/e2e-checkout-payments.mjs
 
       - name: Guardar capturas solo ante fallo E2E
