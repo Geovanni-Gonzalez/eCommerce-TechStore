@@ -26,6 +26,13 @@ techstore:
     # BKL-027: TTL 30 min en V9; conciliar cada 60 segundos.
     reservation-expiry-enabled: ${CHECKOUT_RESERVATION_EXPIRY_ENABLED:true}
     reservation-expiry-scan-ms: ${CHECKOUT_RESERVATION_EXPIRY_SCAN_MS:60000}
+  payment:
+    # DISABLED por defecto. SANDBOX sin red requiere opt-in explícito.
+    provider: ${TECHSTORE_PAYMENT_PROVIDER:DISABLED}
+    sandbox:
+      enabled: ${TECHSTORE_PAYMENT_SANDBOX_ENABLED:false}
+      # Solo para demostraciones sin cobros reales; nunca selecciona un pago real.
+      outcome: ${TECHSTORE_PAYMENT_SANDBOX_OUTCOME:DECLINED}
 
 # Exponer únicamente la salud; no divulgar detalles internos en HTTP.
 management:
