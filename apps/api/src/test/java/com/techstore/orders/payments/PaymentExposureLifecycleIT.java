@@ -138,6 +138,32 @@ class PaymentExposureLifecycleIT {
     }
 
     @Test
+    void concurrentExpiryAttemptsKeepOneIncidentAndNeverReleaseUnknown()
+            throws Exception {
+        attempts.claim(userId,orderId,"D".repeat(64));
+        expireReservation();
+        var ready=new java.util.concurrent.CountDownLatch(2);
+        var go=new java.util.concurrent.CountDownLatch(1);
+        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(2)){
+            java.util.concurrent.Callable<Boolean> task=() -> {
+                ready.countDown();
+                assertTrue(go.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return lifecycle.expireOne(orderId);
+            };
+            var one=pool.submit(task);
+            var two=pool.submit(task);
+            assertTrue(ready.await(10,java.util.concurrent.TimeUnit.SECONDS));
+            go.countDown();
+            assertFalse(one.get(25,java.util.concurrent.TimeUnit.SECONDS));
+            assertFalse(two.get(25,java.util.concurrent.TimeUnit.SECONDS));
+        }
+        assertEquals(1,incidents.findForOrder(orderId).size());
+        assertEquals("PENDING",orderStatus());
+        assertEquals("RESERVED",reservationStatus());
+        assertEquals(3,stock());
+    }
+
+    @Test
     void unknownAuthorizationHoldsExpiredStockForHumanInvestigation() {
         var attempt=attempts.claim(userId,orderId,"B".repeat(64)).attempt();
         attempts.complete(attempt.id(),PaymentAttemptStatus.UNKNOWN,null);

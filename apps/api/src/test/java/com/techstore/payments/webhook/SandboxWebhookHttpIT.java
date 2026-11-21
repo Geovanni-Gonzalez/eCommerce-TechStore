@@ -108,6 +108,39 @@ class SandboxWebhookHttpIT {
     }
 
     @Test
+    void signedLateApprovalCreatesIncidentWithAutoConfirmationOff() throws Exception {
+        // Estado histórico anterior a BKL-041: una cancelación liberó la reserva
+        // antes de que llegara la aprobación firmada.
+        jdbc.update("UPDATE stock_reservations SET status='RELEASED' WHERE order_id=?",
+                orderId);
+        jdbc.update("UPDATE products SET stock=stock+1 WHERE id=?", productId);
+        jdbc.update("UPDATE orders SET status='CANCELLED' WHERE id=?", orderId);
+        String raw = payload("event-legacy-late-0001",
+                providerReference, "APPROVED");
+        long now = Instant.now().getEpochSecond();
+        mvc.perform(signedPost(raw,now))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.duplicate").value(false));
+        mvc.perform(signedPost(raw,now))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.duplicate").value(true));
+        assertEquals("CANCELLED", orderStatus());
+        assertEquals("RELEASED", reservationStatus());
+        assertEquals(5, currentStock());
+        assertEquals(1, countEvents());
+        assertEquals("LATE_APPROVAL", jdbc.queryForObject("""
+                SELECT reason FROM payment_reconciliation_incidents
+                WHERE order_id=?
+                """, String.class, orderId));
+        // Auto-confirm OFF: aun firmado, el evento sigue pendiente de reconciliar.
+        assertEquals("RECEIVED", jdbc.queryForObject("""
+                SELECT reconciliation_status FROM payment_webhook_events e
+                JOIN payment_attempts a ON a.id=e.payment_attempt_id
+                WHERE a.order_id=?
+                """, String.class, orderId));
+    }
+
+    @Test
     void rejectsUnsignedTamperedStaleFutureAndOversizedBodies() throws Exception {
         String valid = payload("event-auth-0001", providerReference, "APPROVED");
         long now = Instant.now().getEpochSecond();
