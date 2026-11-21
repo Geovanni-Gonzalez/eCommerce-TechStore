@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import "./auth.css";
+import AuthProvider from "@/components/AuthProvider";
+import AccountNav from "@/components/AccountNav";
 
 export const metadata: Metadata = {
   title: "TechStore | Prototipo",
@@ -12,7 +15,7 @@ const navigation = [
   { href: "/productos", label: "Productos" },
   { href: "/carrito", label: "Carrito" },
   { href: "/pedidos", label: "Mis pedidos" },
-  { href: "/login", label: "Ingresar" },
+
 ] as const;
 
 export default function RootLayout({
@@ -21,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
+        <AuthProvider>
         <a className="skip-link" href="#contenido">
           Saltar al contenido
         </a>
@@ -36,6 +40,8 @@ export default function RootLayout({
                     <Link href={href}>{label}</Link>
                   </li>
                 ))}
+                <AccountNav />
+                <li><Link href="/registro">Crear cuenta</Link></li>
               </ul>
             </nav>
           </div>
@@ -48,6 +54,7 @@ export default function RootLayout({
             <small>TechStore · Prototipo académico de Diseño de Software</small>
           </div>
         </footer>
+        </AuthProvider>
       </body>
     </html>
   );

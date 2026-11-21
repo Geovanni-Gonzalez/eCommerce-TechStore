@@ -11,8 +11,8 @@ export default function Home() {
       </p>
       <p>
         Ya puedes explorar productos y consultar precios y existencias reales
-        desde la API. El carrito editable y el acceso general a cuentas
-        continúan en desarrollo.
+        desde la API. También puedes registrarte e iniciar sesión.
+        El carrito editable y el checkout visual continúan en desarrollo.
       </p>
       <Link className="button-link" href="/productos">
         Explorar catálogo
