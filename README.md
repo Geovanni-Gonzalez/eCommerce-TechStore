@@ -407,3 +407,8 @@ La API incorpora `POST /api/orders/{orderId}/payment-attempts` (Bearer CLIENT, `
 ## BKL-040 — Confirmación y consumo atómico (solo sandbox opt-in)
 
 Flyway **V14** registra el estado de conciliación de webhooks y el motivo de transición `SANDBOX_VERIFIED`. Con `TECHSTORE_PAYMENT_SANDBOX_AUTO_CONFIRM=true` **solo en pruebas**, un evento SANDBOX firmado, aprobado y coincidente con el intento/pedido permite pasar atómicamente el pedido a `CONFIRMED`, reservas a `CONSUMED` e historial, sin restar stock de nuevo. Por defecto no confirma pedidos. Los eventos declinados/tardíos quedan `DECLINED` o `NEEDS_REVIEW`, y fallos de transacción conservan `RECEIVED` para retry ADMIN. **No son cobros bancarios.** [Diseño y controles BKL-040](docs/backend/ATOMIC_PAYMENT_CONFIRMATION.md).
+
+
+## BKL-041 — Rechazo, caducidad y conciliación incierta
+
+Flyway **V15** registra incidencias de autorizaciones inciertas, aprobaciones sin conciliar y webhooks tardíos. Cancelación y vencimiento conservan stock reservado ante `STARTED/UNKNOWN/SIMULATED_APPROVED` potencialmente ejecutados; la única excepción es una sesión hosted `STARTED` **que nunca se canjeó**, ya que no realizó autorización. Rechazos y `UNAVAILABLE` pueden liberarse según caducidad. Endpoint `GET /api/admin/orders/{orderId}/payment-incidents` (solo ADMIN), sin posibilidad de forzar pago o devolución. [Política detallada BKL-041](docs/backend/PAYMENT_FAILURE_RECONCILIATION.md).

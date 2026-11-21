@@ -2006,6 +2006,79 @@
         ],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/admin/orders/{orderId}/payment-incidents": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "getOrderPaymentIncidents",
+        "summary": "Consultar incidencias de pago retenido o aprobación tardía (solo ADMIN)",
+        "description": "Muestra casos de autorización STARTED/UNKNOWN sin prueba de ausencia de cobro, aprobación no conciliada, firmas tardías y discrepancias. No hay endpoint de forzado de pago ni liberación manual sin evidencia. Bajo la política BKL-041, una sesión hosted STARTED sin canjear puede expirar sin bloqueo. Nunca muestra datos personales ni secretos. Las incidencias son registros de auditoría de la simulación.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incidencias registradas del pedido (puede estar vacío)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentIncident"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin Bearer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Solo ADMIN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido inexistente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -3095,6 +3168,48 @@
               "DECLINED",
               "NEEDS_REVIEW"
             ]
+          }
+        }
+      },
+      "PaymentIncident": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Incidencia de conciliación local. No prueba fondos y no puede cerrarse manualmente por HTTP.",
+        "required": [
+          "id",
+          "orderId",
+          "reason",
+          "webhookEventId",
+          "detectedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "AMBIGUOUS_AUTHORIZATION",
+              "AWAITING_VERIFIED_APPROVAL",
+              "LATE_APPROVAL",
+              "EVIDENCE_MISMATCH"
+            ]
+          },
+          "webhookEventId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "detectedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

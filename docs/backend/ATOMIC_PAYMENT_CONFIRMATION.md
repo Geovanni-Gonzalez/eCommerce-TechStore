@@ -49,3 +49,8 @@ El endpoint no existe salvo cuando `TECHSTORE_PAYMENT_SANDBOX_AUTO_CONFIRM=true`
 ## Trabajo pendiente para banca real
 
 Implementar integración externa con credenciales segregadas, autenticidad y semántica del estado del procesador, idempotencia financiera, confirmaciones firmes de fondos/captura, conciliación de operaciones tardías y políticas de reintegro. El estado **`CONFIRMED` bajo `payment_mode=SIMULATED`** es **solo una confirmación de demostración** y no autoriza envío de mercancía ni facturas.
+
+
+## Protección adicional de vencimiento — BKL-041
+
+La política BKL-041 evita liberar automáticamente stock cuando hay `STARTED` ejecutado, `UNKNOWN` o `SIMULATED_APPROVED` aún sin conciliar. Webhooks tardíos y divergencias crean incidencias auditables en V15. Véase [PAYMENT_FAILURE_RECONCILIATION.md](PAYMENT_FAILURE_RECONCILIATION.md).

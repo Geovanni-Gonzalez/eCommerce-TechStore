@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 27);
+  assert.equal(result.operationCount, 28);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -195,4 +195,20 @@ test("BKL-040 impide conciliación administrativa sin Bearer o con montos del cl
     .post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(unverified),
     /conciliación simulada ADMIN debe estar declarada/);
+});
+
+test("BKL-041 obliga auth ADMIN y respuesta solo con evidencias de incidencias", () => {
+  const unprotected = clone();
+  delete unprotected.paths["/api/admin/orders/{orderId}/payment-incidents"].get.security;
+  assert.throws(() => validateContract(unprotected),
+    /consultar incidencias requiere Bearer ADMIN/);
+  const forged = clone();
+  forged.paths["/api/admin/orders/{orderId}/payment-incidents"].get.requestBody =
+    {content: {"application/json": {schema: {type:"object"}}}};
+  assert.throws(() => validateContract(forged),
+    /lectura de incidencias sin cuerpo/);
+  const tampered = clone();
+  tampered.components.schemas.PaymentIncident.properties.reason.enum.pop();
+  assert.throws(() => validateContract(tampered),
+    /causas de riesgo consistentes con Flyway V15/);
 });
