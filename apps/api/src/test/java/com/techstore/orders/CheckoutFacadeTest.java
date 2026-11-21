@@ -156,6 +156,9 @@ class CheckoutFacadeTest {
         @Override public Optional<Order> findByIdForUser(long userId, long id) {
             return Optional.empty();
         }
+        @Override public Optional<Order> findByIdForAdmin(long id) {
+            return Optional.empty();
+        }
     }
 
     private static final class FakeHistory implements OrderStatusHistoryRepository {
