@@ -9,6 +9,7 @@ import {
   parseCatalogPage, parseCatalogPageQuery,
 } from "@/lib/catalog";
 import ProductPhoto from "./ProductPhoto";
+import AddToCartButton from "@/components/AddToCartButton";
 
 type Result = {
   forPage: number;
@@ -99,6 +100,8 @@ export default function CatalogClient() {
                       ? `Disponible · ${product.stock} unidad${product.stock === 1 ? "" : "es"}`
                       : "Agotado"}
                   </p>
+                  <AddToCartButton productId={product.id}
+                    name={product.name} stock={product.stock} />
                   <Link className="catalog-detail-link" href={`/productos/${product.id}`}>
                     Ver detalle <span aria-hidden="true">→</span>
                   </Link>
