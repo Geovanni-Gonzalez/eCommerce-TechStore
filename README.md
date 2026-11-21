@@ -422,3 +422,8 @@ Las rutas **CLIENT** `GET /api/orders`, `GET /api/orders/{id}` y `GET /api/order
 ## BKL-039 — Páginas de resultado de pago (solo sandbox)
 
 La ruta `/pagos/resultado` y las vistas `/aprobado`, `/rechazado`, `/pendiente` **nunca aceptan el estado de una URL como evidencia**. Solicitan identificación de la cuenta propietaria y consultan `GET /api/orders/{id}` y `GET /api/orders/{id}/payment-attempts/{attemptId}`; solo muestran aprobación de **simulación** con pedido `CONFIRMED` e intento `SIMULATED_APPROVED` concordantes. El intento aprobado sin webhook conciliado aparece pendiente. Hay pruebas de clasificación negativa y smoke de rutas en CI. [Guía de BKL-039](docs/frontend/PAYMENT_RESULT_PAGES.md).
+
+
+## BKL-043 — Mis pedidos: historial, detalle y estado visual
+
+La navegación **Mis pedidos** abre `/pedidos`, una interfaz privada ROLE_CLIENT con listado paginado por cursor (12 por página), estado `PENDING/CONFIRMED/CANCELLED`, detalle comercial histórico y línea temporal de BKL-042. El cliente consulta solo pedidos propios; la sesión puntual se mantiene en memoria (BKL-017 pendiente). `CONFIRMED` se identifica claramente como sandbox sin dinero bancario. [Guía BKL-043](docs/frontend/ORDER_HISTORY_UI.md).
