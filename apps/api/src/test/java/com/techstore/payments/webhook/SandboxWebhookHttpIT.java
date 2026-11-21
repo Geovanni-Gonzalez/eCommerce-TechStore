@@ -157,7 +157,7 @@ class SandboxWebhookHttpIT {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("WEBHOOK_EVENT_CONFLICT"));
         // Mismo eventId y otro cuerpo válido firmado: no se sobrescribe.
-        mvc.perform(signedPost(first.replace("2500.00", "2500.0"), epoch))
+        mvc.perform(signedPost(" " + first, epoch))
                 .andExpect(status().isConflict());
         assertEquals(1, countEvents());
         assertEquals("PENDING", orderStatus());
