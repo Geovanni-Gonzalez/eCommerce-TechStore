@@ -11,6 +11,7 @@ const navigation = [
   { href: "/", label: "Inicio" },
   { href: "/productos", label: "Productos" },
   { href: "/carrito", label: "Carrito" },
+  { href: "/pedidos", label: "Mis pedidos" },
   { href: "/login", label: "Ingresar" },
 ] as const;
 
