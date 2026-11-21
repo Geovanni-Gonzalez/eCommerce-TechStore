@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
  * issue participa en la misma transacción que el claim STARTED del intento.
  */
 @Repository
-public final class JdbcSandboxSessionRepository implements SandboxSessionRepository {
+public class JdbcSandboxSessionRepository implements SandboxSessionRepository {
     private final JdbcTemplate jdbc;
 
     public JdbcSandboxSessionRepository(JdbcTemplate jdbc) {
