@@ -58,6 +58,10 @@ class OrderObserverIT {
     void aCommittedOrderCreatesOneVisibleAuditRecord() {
         Order order = checkout.confirm(userId, address());
         assertEquals(1, auditCount(order.id()));
+        assertEquals(1, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history
+                WHERE order_id=? AND reason='CREATED'
+                """, Integer.class, order.id()));
         assertEquals("ORDER_CREATED", jdbc.queryForObject("""
                 SELECT event_type FROM order_event_audit WHERE order_id = ?
                 """, String.class, order.id()));
@@ -113,6 +117,10 @@ class OrderObserverIT {
     @AfterEach
     void cleanup() {
         if (userId < 1) return;
+        jdbc.update("""
+                DELETE FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
+                """, userId);
         jdbc.update("""
                 DELETE FROM order_event_audit
                 WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)

@@ -80,6 +80,11 @@ class CheckoutConcurrencyIT {
                 WHERE user_id IN (?, ?)
                 """, Integer.class, alice, bob));
         assertEquals(1, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history h
+                JOIN orders o ON o.id=h.order_id
+                WHERE o.user_id IN (?,?) AND h.reason='CREATED'
+                """, Integer.class, alice, bob));
+        assertEquals(1, jdbc.queryForObject("""
                 SELECT COUNT(*) FROM stock_reservations r
                 JOIN orders o ON o.id=r.order_id
                 WHERE o.user_id IN (?, ?) AND r.product_id=? AND r.status='RESERVED'
@@ -117,6 +122,10 @@ class CheckoutConcurrencyIT {
     @AfterEach
     void cleanFixtures() {
         if (alice < 1 || bob < 1) return;
+        jdbc.update("""
+                DELETE FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id IN (?,?))
+                """, alice, bob);
         jdbc.update("""
                 DELETE FROM order_event_audit
                 WHERE order_id IN (SELECT id FROM orders WHERE user_id IN (?,?))

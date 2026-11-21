@@ -69,6 +69,8 @@ class ReservationLifecycleIT {
         assertEquals("CANCELLED", orderStatus(order.id()));
         assertEquals("RELEASED", reservationStatus(order.id()));
         assertEquals(1, auditCount(order.id()));
+        assertEquals(2, historyCount(order.id()));
+        assertEquals("CLIENT_CANCEL", lastReason(order.id()));
         assertFalse(lifecycle.expireOne(order.id()));
     }
 
@@ -86,6 +88,8 @@ class ReservationLifecycleIT {
         assertTrue(reservations.findExpiredOrders(100).contains(order.id()));
         assertTrue(lifecycle.expireOne(order.id()));
         assertFalse(lifecycle.expireOne(order.id()));
+        assertEquals(2, historyCount(order.id()));
+        assertEquals("EXPIRED", lastReason(order.id()));
         assertEquals(5, currentStock());
         assertEquals("CANCELLED", orderStatus(order.id()));
         assertEquals("RELEASED", reservationStatus(order.id()));
@@ -103,6 +107,7 @@ class ReservationLifecycleIT {
         assertEquals(3, currentStock());
         assertEquals("PENDING", orderStatus(order.id()));
         assertEquals("RESERVED", reservationStatus(order.id()));
+        assertEquals(1, historyCount(order.id()));
     }
 
     @Test
@@ -126,6 +131,7 @@ class ReservationLifecycleIT {
         }
         assertEquals(5, currentStock());
         assertEquals("RELEASED", reservationStatus(order.id()));
+        assertEquals(2, historyCount(order.id()));
     }
 
     @Test
@@ -167,6 +173,19 @@ class ReservationLifecycleIT {
                 String.class, id);
     }
 
+    private int historyCount(long id) {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history WHERE order_id=?
+                """, Integer.class, id);
+    }
+
+    private String lastReason(long id) {
+        return jdbc.queryForObject("""
+                SELECT reason FROM order_status_history
+                WHERE order_id=? ORDER BY id DESC LIMIT 1
+                """, String.class, id);
+    }
+
     private int currentStock() {
         return jdbc.queryForObject(
                 "SELECT stock FROM products WHERE id=?", Integer.class, productId);
@@ -181,6 +200,10 @@ class ReservationLifecycleIT {
     @AfterEach
     void cleanup() {
         if (userId < 1) return;
+        jdbc.update("""
+                DELETE FROM order_status_history
+                WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)
+                """, userId);
         jdbc.update("""
                 DELETE FROM order_event_audit
                 WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)

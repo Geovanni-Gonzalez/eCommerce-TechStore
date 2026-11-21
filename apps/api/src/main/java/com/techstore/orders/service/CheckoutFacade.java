@@ -9,6 +9,7 @@ import com.techstore.orders.domain.ShippingAddress;
 import com.techstore.orders.events.OrderCreatedEvent;
 import com.techstore.orders.events.OrderEventPublisher;
 import com.techstore.orders.inventory.CheckoutStockRepository;
+import com.techstore.orders.history.OrderStatusHistoryRepository;
 import com.techstore.orders.pricing.CheckoutTotalsCalculator;
 import com.techstore.orders.repository.OrderRepository;
 import java.util.List;
@@ -30,15 +31,17 @@ public class CheckoutFacade {
     private final CheckoutTotalsCalculator pricing;
     private final OrderRepository orders;
     private final OrderEventPublisher events;
+    private final OrderStatusHistoryRepository history;
 
     public CheckoutFacade(CartRepository carts, CheckoutStockRepository stock,
             CheckoutTotalsCalculator pricing, OrderRepository orders,
-            OrderEventPublisher events) {
+            OrderEventPublisher events, OrderStatusHistoryRepository history) {
         this.carts = Objects.requireNonNull(carts);
         this.stock = Objects.requireNonNull(stock);
         this.pricing = Objects.requireNonNull(pricing);
         this.orders = Objects.requireNonNull(orders);
         this.events = Objects.requireNonNull(events);
+        this.history = Objects.requireNonNull(history);
     }
 
     @Transactional
@@ -69,6 +72,7 @@ public class CheckoutFacade {
         OrderDraft draft = new OrderDraft(userId, address, lines, totals);
         Order order = orders.saveDraft(draft);
         stock.reserveForOrder(order.id(), current);
+        history.recordCreated(order.id(), userId); // V10, mismo commit o rollback
         carts.clear(userId);
         events.orderCreated(new OrderCreatedEvent(
                 order.id(), userId, order.totals().totalCrc()));

@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 18);
+  assert.equal(result.operationCount, 20);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -106,4 +106,19 @@ test("cancelación requiere Bearer y se declara implementada", () => {
   planned.paths["/api/orders/{id}/cancel"].post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(planned),
     /La cancelación de reservas debe estar implementada/);
+});
+
+test("BKL-045 exige Bearer y DTO de historial para ADMIN", () => {
+  const noSecurity = clone();
+  delete noSecurity.paths["/api/admin/orders/{id}/history"].get.security;
+  assert.throws(() => validateContract(noSecurity),
+    /BKL-045: historial administrativo exige Bearer/);
+  const noAuthChange = clone();
+  delete noAuthChange.paths["/api/admin/orders/{id}/status"].patch.security;
+  assert.throws(() => validateContract(noAuthChange),
+    /BKL-045: cambio administrativo exige Bearer/);
+  const planned = clone();
+  planned.paths["/api/admin/orders/{id}/status"].patch["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned),
+    /BKL-045: transición administrativa debe estar implementada/);
 });
