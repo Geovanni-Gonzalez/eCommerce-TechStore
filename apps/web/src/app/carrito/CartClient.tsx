@@ -236,8 +236,14 @@ export default function CartClient() {
                     Revisa los artículos sin disponibilidad antes de continuar.
                   </p>
                 )}
-                <p className="cart-muted">La dirección de entrega y el checkout visual
-                  estarán disponibles en BKL-031 y BKL-034. Aquí no se cobra dinero.</p>
+                {currentCart.checkoutReady && (
+                  <Link href="/checkout/entrega" className="cart-primary cart-summary__link">
+                    Preparar dirección de entrega
+                  </Link>
+                )}
+                <p className="cart-muted">La dirección se revisa en BKL-031;
+                  la confirmación del pedido y el pago visual pertenecerán a BKL-034.
+                  Aquí no se cobra dinero.</p>
                 <Link href="/productos" className="cart-secondary cart-summary__link">
                   Seguir comprando
                 </Link>
