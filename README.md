@@ -387,3 +387,8 @@ Flyway **V10** añade `order_status_history`. El checkout registra `CREATED` y l
 ## BKL-035 — Puerto de pagos y sandbox seguro
 
 `PaymentGateway` define el contrato desacoplado para una autorización simulada. En configuración predeterminada, **DISABLED** rechaza solicitudes y **no crea cobros**. Para una demostración controlada y **sin proveedor externo**, habilitar expresamente `TECHSTORE_PAYMENT_PROVIDER=SANDBOX` y `TECHSTORE_PAYMENT_SANDBOX_ENABLED=true`; `TECHSTORE_PAYMENT_SANDBOX_OUTCOME=APPROVED|DECLINED` controla solo el resultado simulado. El sandbox no recibe datos de tarjetas ni credenciales, no llama a redes y **no confirma pedidos ni libera/consume inventario**. Los intentos persistentes y la idempotencia de pagos corresponden a BKL-036; la confirmación de pedidos ante pago real, a BKL-040. [Contrato, flujo y límites](docs/backend/PAYMENT_GATEWAY_SANDBOX.md).
+
+
+## BKL-036 — Intentos de pago persistentes e idempotentes
+
+La API incorpora `POST /api/orders/{orderId}/payment-attempts` (Bearer CLIENT, `Idempotency-Key`, **sin body**) y `GET /api/orders/{orderId}/payment-attempts/{attemptId}`. Flyway **V11** guarda intentos y referencias simuladas únicas, y evita reenviar autorizaciones al repetir claves; estados inciertos quedan pendientes de conciliación. El proveedor sigue deshabilitado por defecto y **SIMULATED_APPROVED no confirma pedidos ni acredita cobros reales**. Véase [BKL-036 — intentos, concurrencia y conciliación](docs/backend/PAYMENT_ATTEMPTS.md).

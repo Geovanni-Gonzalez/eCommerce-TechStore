@@ -78,3 +78,8 @@ La selección de proveedor es **fail-closed**: `DISABLED` por defecto; `SANDBOX`
 ### Exclusiones expresas
 
 No hay cobros, callbacks, registro de intentos ni cambio de `orders.status`. Se implementarán en BKL-036, BKL-038 y BKL-040 respectivamente. El proveedor simulado no debe ser utilizado como evidencia de liquidación de pagos reales.
+
+
+## BKL-036 — Intentos persistentes
+
+La persistencia real de intentos idempotentes y el contrato HTTP CLIENT se documentan en [PAYMENT_ATTEMPTS.md](PAYMENT_ATTEMPTS.md). La referencia `SBX-...` es única en PostgreSQL por restricción, y el mismo `Idempotency-Key` no vuelve a invocar la pasarela. Ninguna aprobación simulada consume reservas ni confirma pedidos.

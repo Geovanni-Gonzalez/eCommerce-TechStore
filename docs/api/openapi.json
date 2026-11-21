@@ -39,6 +39,10 @@
     {
       "name": "Checkout",
       "description": "Cotización provisional de importes del carrito. Strategy de envío configurable; no confirma pedido ni reserva stock."
+    },
+    {
+      "name": "Payments",
+      "description": "BKL-036: intentos persistentes e idempotentes de simulación; nunca representa cobro real"
     }
   ],
   "paths": {
@@ -1383,6 +1387,206 @@
         ],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/orders/{orderId}/payment-attempts": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "submitPaymentAttempt",
+        "summary": "Registrar un intento idempotente para el pedido propio",
+        "description": "Solo CLIENT propietario. Sin body ni montos de navegador. La clave se valida y almacena únicamente como hash SHA-256 por usuario. El registro STARTED se confirma antes de llamar al gateway local. La primera solicitud crea el intento (201), el replay devuelve el mismo (200) sin invocar al gateway. UNAVAILABLE=proveedor desactivado y UNKNOWN=requiere conciliación; STARTED/UNKNOWN/aprobado simulado bloquean otras claves. Nunca carga dinero ni modifica orders.status.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Identificador estable de intento, al menos 8 caracteres; secreto de autenticación NO.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mismo intento persistido, sin segunda invocación al proveedor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAttempt"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Registro de intento creado; no confirma pago",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAttempt"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "Ruta para consultar el intento",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente o inválida, o body prohibido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token Bearer requerido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido inexistente o ajeno",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Clave reutilizada en otro pedido o estado/intento no compatible",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/orders/{orderId}/payment-attempts/{attemptId}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "getPaymentAttempt",
+        "summary": "Consultar el estado conciliable de un intento propio",
+        "description": "Cliente propietario únicamente; lectura de estado durable sin reenviar autorización a sandbox. STARTED y UNKNOWN requieren conciliación; SIMULATED_APPROVED nunca acredita dinero real.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "attemptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot persistente, sin información de tarjeta ni clave de idempotencia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAttempt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer requerido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Intento inexistente o de otro cliente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -2222,6 +2426,59 @@
             ]
           },
           "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentAttempt": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Intento de pago persistente. SIMULATED_APPROVED no acredita cobro ni confirma pedido.",
+        "required": [
+          "id",
+          "orderId",
+          "totalCrc",
+          "status",
+          "providerReference",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalCrc": {
+            "type": "number",
+            "format": "double",
+            "multipleOf": 0.01,
+            "description": "Monto CRC del snapshot de orders, solo lectura"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STARTED",
+              "SIMULATED_APPROVED",
+              "SIMULATED_DECLINED",
+              "UNAVAILABLE",
+              "UNKNOWN"
+            ]
+          },
+          "providerReference": {
+            "type": "string",
+            "nullable": true,
+            "description": "Referencia simulada única o null; no es recibo de pago"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
             "type": "string",
             "format": "date-time"
           }

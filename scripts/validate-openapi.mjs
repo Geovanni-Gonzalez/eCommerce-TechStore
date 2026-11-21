@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 20, "Se esperan 20 operaciones de API");
+  assert.equal(operationCount, 22, "Se esperan 22 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -132,6 +132,27 @@ export function validateContract(doc) {
   assert.equal(adminStatus.requestBody?.content?.["application/json"]?.schema?.$ref,
     "#/components/schemas/UpdateOrderStatusRequest",
     "BKL-045: solo se admite body de estado");
+  const paymentSubmit = doc.paths["/api/orders/{orderId}/payment-attempts"]?.post;
+  const paymentGet = doc.paths["/api/orders/{orderId}/payment-attempts/{attemptId}"]?.get;
+  assert.equal(paymentSubmit?.["x-implementation-status"], "implemented",
+    "BKL-036: intento persistente debe estar implementado");
+  assert.equal(paymentGet?.["x-implementation-status"], "implemented",
+    "BKL-036: consulta de intento debe estar implementada");
+  assert.deepEqual(paymentSubmit.security, [{ bearerAuth: [] }],
+    "BKL-036: registrar intento requiere Bearer");
+  assert.deepEqual(paymentGet.security, [{ bearerAuth: [] }],
+    "BKL-036: consultar intento requiere Bearer");
+  const idempotency = paymentSubmit.parameters?.find(parameter =>
+    parameter.in === "header" && parameter.name === "Idempotency-Key");
+  assert.equal(idempotency?.required, true,
+    "BKL-036: Idempotency-Key es obligatorio");
+  assert.equal(paymentSubmit.requestBody, undefined,
+    "BKL-036: no aceptar montos, credenciales o body de pagos del navegador");
+  assert.equal(paymentSubmit.responses["201"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/PaymentAttempt",
+    "BKL-036: el intento debe devolver DTO persistente");
+  assert.ok(paymentSubmit.responses["200"] && paymentSubmit.responses["409"],
+    "BKL-036: replay y conflicto de idempotencia son parte del contrato");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",
