@@ -2,6 +2,10 @@ package com.techstore.payments.webhook;
 
 import com.techstore.orders.domain.CrcMoney;
 import com.techstore.payments.PaymentOutcome;
+import com.techstore.orders.payments.SandboxPaymentConfirmationService;
+import org.springframework.beans.factory.ObjectProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -25,20 +29,38 @@ import tools.jackson.databind.json.JsonMapper;
         havingValue = "true")
 public class SandboxWebhookService {
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final Logger LOG =
+            LoggerFactory.getLogger(SandboxWebhookService.class);
     private final SignedSandboxWebhookVerifier verifier;
     private final VerifiedWebhookEventRepository repository;
+    private final ObjectProvider<SandboxPaymentConfirmationService> confirmation;
 
     public SandboxWebhookService(SignedSandboxWebhookVerifier verifier,
-            VerifiedWebhookEventRepository repository) {
+            VerifiedWebhookEventRepository repository,
+            ObjectProvider<SandboxPaymentConfirmationService> confirmation) {
         this.verifier = Objects.requireNonNull(verifier);
         this.repository = Objects.requireNonNull(repository);
+        this.confirmation = Objects.requireNonNull(confirmation);
     }
 
     public WebhookEventReceipt receive(
             byte[] rawBody, String timestamp, String signature) {
         verifier.verify(rawBody, timestamp, signature);
         VerifiedSandboxWebhookEvent event = parse(rawBody);
-        return repository.record(event, digest(rawBody));
+        // Primero COMMIT de la evidencia firmada (BKL-038), luego transacción
+        // independiente BKL-040. Si falla la confirmación, queda RECEIVED,
+        // auditable y reintentable por ADMIN sin reenviar la notificación.
+        WebhookEventReceipt receipt = repository.record(event, digest(rawBody));
+        confirmation.ifAvailable(service -> {
+            try {
+                service.reconcile(receipt.id());
+            } catch (RuntimeException failure) {
+                // No registrar body, HMAC ni credenciales; id interno basta.
+                LOG.warn("Evento {} persiste RECEIVED para conciliación",
+                        receipt.id());
+            }
+        });
+        return receipt;
     }
 
     static VerifiedSandboxWebhookEvent parse(byte[] rawBody) {

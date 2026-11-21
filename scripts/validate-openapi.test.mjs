@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 26);
+  assert.equal(result.operationCount, 27);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -178,4 +178,21 @@ test("BKL-037 requiere Bearer e idempotencia, sin body de montos ni returnUrl", 
   noToken.paths["/api/payments/sandbox/sessions/preview"].post.requestBody =
     {content: {"application/json": {schema: {type:"object"}}}};
   assert.throws(() => validateContract(noToken), /solo se admite token efímero/);
+});
+
+test("BKL-040 impide conciliación administrativa sin Bearer o con montos del cliente", () => {
+  const anonymous = clone();
+  delete anonymous.paths["/api/admin/payment-events/{eventId}/reconcile"].post.security;
+  assert.throws(() => validateContract(anonymous),
+    /reconciliación requiere Bearer ADMIN/);
+  const body = clone();
+  body.paths["/api/admin/payment-events/{eventId}/reconcile"].post.requestBody =
+    {content: {"application/json": {schema: {type:"object"}}}};
+  assert.throws(() => validateContract(body),
+    /no admitir resultados, montos ni referencias fabricadas/);
+  const unverified = clone();
+  unverified.paths["/api/admin/payment-events/{eventId}/reconcile"]
+    .post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(unverified),
+    /conciliación simulada ADMIN debe estar declarada/);
 });

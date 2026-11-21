@@ -78,3 +78,8 @@ Un webhook firmado con HMAC-SHA256 y timestamp reciente se acepta únicamente al
 ## Inicio de pago con redirección (BKL-037)
 
 El endpoint `POST /api/orders/{orderId}/payment-sessions` (CLIENT, Idempotency-Key, sin body) crea un intento STARTED y un token de sesión local sin llamar todavía al gateway. La redirección segura a `/pagos/sandbox` se canjea una sola vez en `/api/payments/sandbox/sessions/complete`. [Detalles y seguridad](SECURE_PAYMENT_REDIRECT.md).
+
+
+## BKL-040
+
+El resultado `SIMULATED_APPROVED` del intento **no** confirma automáticamente el pedido; se requiere el evento HMAC de BKL-038 y un reconciliador transaccional opt-in. Los errores conservan el evento para conciliación y nunca crean un doble consumo de la reserva. Véase [ATOMIC_PAYMENT_CONFIRMATION.md](ATOMIC_PAYMENT_CONFIRMATION.md).

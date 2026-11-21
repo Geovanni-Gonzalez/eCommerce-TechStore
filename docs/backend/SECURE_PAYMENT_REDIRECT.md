@@ -86,3 +86,8 @@ Si el backend cae tras canjear el token y antes de persistir la respuesta, el in
 - CI Java 21/Flyway V13 + frontend Next.js/TypeScript/OpenAPI de **26** operaciones.
 
 **Ningún resultado del sandbox es recibo bancario ni prueba de liquidación.** Una futura pasarela externa necesitaría su API real, credenciales protegidas, webhooks verificables, redirecciones seguras específicas de proveedor, controles operativos y reconciliación.
+
+
+## Consumo de reservas tras webhook verificado (BKL-040)
+
+La confirmación de demostración del pedido solo está habilitada explícitamente con `TECHSTORE_PAYMENT_SANDBOX_AUTO_CONFIRM=true` y un webhook HMAC válido de sandbox. No simula fondos bancarios recibidos. Véase [ATOMIC_PAYMENT_CONFIRMATION.md](ATOMIC_PAYMENT_CONFIRMATION.md).

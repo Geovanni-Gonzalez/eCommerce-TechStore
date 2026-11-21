@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** Bloquear orders primero; luego reservas/productos. BKL-040 seguirá el mismo orden. */
+/** Bloquear orders primero; luego reservas/productos. BKL-040 aplica el mismo orden en reconciliación transaccional. */
 @Repository
 public class JdbcOrderReservationLifecycleRepository
         implements OrderReservationLifecycleRepository {

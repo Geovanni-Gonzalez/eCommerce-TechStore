@@ -35,6 +35,9 @@ techstore:
       outcome: ${TECHSTORE_PAYMENT_SANDBOX_OUTCOME:DECLINED}
       # Únicamente uno de los orígenes permitidos en CORS; sin open redirect.
       redirect-origin: ${TECHSTORE_PAYMENT_SANDBOX_REDIRECT_ORIGIN:http://localhost:3000}
+      # BKL-040: solo confirmación SIMULADA tras webhook HMAC.
+      # Apagado por defecto; NUNCA tratar esto como pago bancario real.
+      auto-confirm-verified-events: ${TECHSTORE_PAYMENT_SANDBOX_AUTO_CONFIRM:false}
     webhook:
       # BKL-038: SOLO callback simulado. Apagado por defecto.
       enabled: ${TECHSTORE_PAYMENT_WEBHOOK_ENABLED:false}
