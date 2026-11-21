@@ -20,11 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class JdbcSimulatedPaymentConfirmationRepository {
     private final JdbcTemplate jdbc;
     private final OrderStatusHistoryRepository history;
+    private final PaymentIncidentRepository incidents;
 
     public JdbcSimulatedPaymentConfirmationRepository(
-            JdbcTemplate jdbc, OrderStatusHistoryRepository history) {
+            JdbcTemplate jdbc, OrderStatusHistoryRepository history,
+            PaymentIncidentRepository incidents) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.history = Objects.requireNonNull(history);
+        this.incidents = Objects.requireNonNull(incidents);
     }
 
     @Transactional
@@ -160,6 +163,18 @@ public class JdbcSimulatedPaymentConfirmationRepository {
                 """, result.name(), eventId);
         if (changed != 1) {
             throw new IllegalStateException("Estado de evento cambió en conciliación");
+        }
+        if (result == PaymentReconciliationStatus.NEEDS_REVIEW) {
+            Boolean late = jdbc.queryForObject("""
+                    SELECT o.status<>'PENDING'
+                      OR EXISTS (SELECT 1 FROM stock_reservations r
+                          WHERE r.order_id=o.id AND
+                            (r.status<>'RESERVED' OR r.expires_at<=CURRENT_TIMESTAMP))
+                    FROM orders o WHERE o.id=?
+                    """, Boolean.class, orderId);
+            incidents.record(orderId, Boolean.TRUE.equals(late)
+                    ? PaymentIncidentReason.LATE_APPROVAL
+                    : PaymentIncidentReason.EVIDENCE_MISMATCH, eventId);
         }
         return new PaymentReconciliationResult(eventId, orderId, result);
     }

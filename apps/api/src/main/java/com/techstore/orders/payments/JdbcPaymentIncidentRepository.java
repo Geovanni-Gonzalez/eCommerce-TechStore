@@ -34,6 +34,12 @@ public class JdbcPaymentIncidentRepository implements PaymentIncidentRepository 
         if (orderId < 1) {
             throw new PaymentReconciliationNotFoundException();
         }
+        Boolean exists = jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM orders WHERE id=?)",
+                Boolean.class, orderId);
+        if (!Boolean.TRUE.equals(exists)) {
+            throw new PaymentReconciliationNotFoundException();
+        }
         return jdbc.query("""
                 SELECT i.id,i.order_id,i.reason,i.webhook_event_id,i.detected_at
                 FROM payment_reconciliation_incidents i
