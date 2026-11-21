@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 20);
+  assert.equal(result.operationCount, 22);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -121,4 +121,26 @@ test("BKL-045 exige Bearer y DTO de historial para ADMIN", () => {
   planned.paths["/api/admin/orders/{id}/status"].patch["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(planned),
     /BKL-045: transición administrativa debe estar implementada/);
+});
+
+test("BKL-036 prohíbe endpoint de pagos sin Bearer o sin clave de idempotencia", () => {
+  const noAuth = clone();
+  delete noAuth.paths["/api/orders/{orderId}/payment-attempts"].post.security;
+  assert.throws(() => validateContract(noAuth), /registrar intento requiere Bearer/);
+  const noKey = clone();
+  noKey.paths["/api/orders/{orderId}/payment-attempts"].post.parameters =
+    noKey.paths["/api/orders/{orderId}/payment-attempts"].post.parameters
+      .filter(p => p.name !== "Idempotency-Key");
+  assert.throws(() => validateContract(noKey), /Idempotency-Key es obligatorio/);
+  const withPrice = clone();
+  withPrice.paths["/api/orders/{orderId}/payment-attempts"].post.requestBody = {
+    content: {"application/json": {schema: {type: "object"}}}
+  };
+  assert.throws(() => validateContract(withPrice),
+    /no aceptar montos, credenciales o body de pagos/);
+  const planned = clone();
+  planned.paths["/api/orders/{orderId}/payment-attempts/{attemptId}"]
+    .get["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned),
+    /consulta de intento debe estar implementada/);
 });
