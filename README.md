@@ -417,3 +417,8 @@ Flyway **V15** registra incidencias de autorizaciones inciertas, aprobaciones si
 ## BKL-042 — Consultas seguras de pedidos
 
 Las rutas **CLIENT** `GET /api/orders`, `GET /api/orders/{id}` y `GET /api/orders/{id}/history` filtran por el usuario autenticado, usan paginación por cursor `limit`/`beforeId` y devuelven 404 para pedidos ajenos o inexistentes. Las rutas **ADMIN** `GET /api/admin/orders` y `GET /api/admin/orders/{id}` usan DTO separados que muestran el propietario. El historial CLIENT no divulga IDs de actores ni auditoría. OpenAPI **31 operaciones**. [Detalles de BKL-042](docs/backend/ORDER_READ_API.md).
+
+
+## BKL-039 — Páginas de resultado de pago (solo sandbox)
+
+La ruta `/pagos/resultado` y las vistas `/aprobado`, `/rechazado`, `/pendiente` **nunca aceptan el estado de una URL como evidencia**. Solicitan identificación de la cuenta propietaria y consultan `GET /api/orders/{id}` y `GET /api/orders/{id}/payment-attempts/{attemptId}`; solo muestran aprobación de **simulación** con pedido `CONFIRMED` e intento `SIMULATED_APPROVED` concordantes. El intento aprobado sin webhook conciliado aparece pendiente. Hay pruebas de clasificación negativa y smoke de rutas en CI. [Guía de BKL-039](docs/frontend/PAYMENT_RESULT_PAGES.md).
