@@ -34,7 +34,7 @@ test("BKL-031 rechaza provincias ajenas sin afirmar validación de cantones",()=
 test("BKL-031 límites y caracteres de control del backend Java",()=>{
   for (const item of [
     {...valid,canton:"x".repeat(81)},
-    {...valid,district:"\tDistrito"},
+    {...valid,district:"Distr\tito"},
     {...valid,details:"1234"},
     {...valid,details:"x".repeat(301)},
     {...valid,recipientName:"A"},
