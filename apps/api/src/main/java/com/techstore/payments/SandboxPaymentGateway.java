@@ -10,7 +10,7 @@ import java.util.Objects;
  * Simulador sin red, pasarela real, credenciales, llamadas HTTP ni cobros.
  * Para el MISMO intento y monto devuelve la misma referencia en cada llamada.
  *
- * NO persiste idempotencia ni garantiza unicidad entre intentos: BKL-036.
+ * BKL-036 persiste la clave y garantiza referencias únicas en PostgreSQL.
  */
 public final class SandboxPaymentGateway implements PaymentGateway {
     private final PaymentOutcome outcome;
