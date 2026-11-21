@@ -47,6 +47,7 @@ export default function AddToCartButton({
   return (
     <div className="cart-add">
       <button type="button" className="cart-primary" disabled={busy}
+        aria-label={`Añadir ${name} al carrito`}
         onClick={() => void add()}>
         {busy ? "Agregando…" : "Añadir al carrito"}
       </button>

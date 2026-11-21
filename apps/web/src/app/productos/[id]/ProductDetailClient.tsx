@@ -7,6 +7,7 @@ import {
   type CatalogProduct, formatCatalogCrc, parseProduct, parseProductId,
 } from "@/lib/catalog";
 import ProductPhoto from "../ProductPhoto";
+import AddToCartButton from "@/components/AddToCartButton";
 
 type Result = {
   forId: number;
@@ -86,8 +87,11 @@ export default function ProductDetailClient({ idParam }: { idParam: string }) {
             </p>
             <h2>Descripción</h2>
             <p>{current.product.description?.trim() || "Este producto no tiene descripción publicada."}</p>
-            <p className="catalog-product__note">La compra desde la interfaz se habilitará
-              con el carrito y checkout visual (BKL-029 y BKL-034).</p>
+            <AddToCartButton productId={current.product.id}
+              name={current.product.name} stock={current.product.stock} />
+            <p className="catalog-product__note">El carrito ya permite guardar productos.
+              El formulario de entrega y checkout visual estarán disponibles
+              en BKL-031 y BKL-034.</p>
             <Link className="catalog-detail-link" href="/productos">← Volver al catálogo</Link>
           </div>
         </article>
