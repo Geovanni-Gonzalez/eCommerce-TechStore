@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 28, "Se esperan 28 operaciones de API");
+  assert.equal(operationCount, 31, "Se esperan 31 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -238,11 +238,58 @@ export function validateContract(doc) {
     ["AMBIGUOUS_AUTHORIZATION","AWAITING_VERIFIED_APPROVAL",
      "LATE_APPROVAL","EVIDENCE_MISMATCH"],
     "BKL-041: causas de riesgo consistentes con Flyway V15");
-  assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
-    "Historial de pedidos sigue pendiente");
-  assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",
-    "Detalle HTTP de pedido sigue pendiente");
-  assert.equal(proposedCount, 2, "Solo las lecturas de pedidos están planificadas");
+  // BKL-042: client owner-scoping + separación explícita de rutas ADMIN.
+  for (const [route, schema] of [
+    ["/api/orders", "OrderPage"],
+    ["/api/orders/{id}", "Order"],
+    ["/api/orders/{id}/history", null]
+  ]) {
+    const op = doc.paths[route]?.get;
+    assert.equal(op?.["x-implementation-status"], "implemented",
+      "BKL-042: lectura CLIENT no implementada");
+    assert.deepEqual(op?.security, [{ bearerAuth: [] }],
+      "BKL-042: lectura CLIENT requiere Bearer");
+    if (schema) assert.equal(op?.responses?.["200"]?.content?.["application/json"]?.schema?.$ref,
+      "#/components/schemas/" + schema,
+      "BKL-042: CLIENT no debe recibir DTO administrativo");
+    assert.ok(op?.responses?.["404"] || route === "/api/orders",
+      "BKL-042: detalle ajeno debe tener 404");
+  }
+  const timeline = doc.paths["/api/orders/{id}/history"]?.get;
+  assert.equal(timeline?.responses?.["200"]?.content?.["application/json"]?.schema?.items?.$ref,
+    "#/components/schemas/OrderTimelineEntry",
+    "BKL-042: historial usa DTO público sin actorId");
+  const historyFields = Object.keys(doc.components.schemas.OrderTimelineEntry?.properties ?? {});
+  assert.ok(!historyFields.includes("actorId") &&
+    !historyFields.includes("id") && !historyFields.includes("orderId"),
+    "BKL-042: historial CLIENT sin IDs globales de auditoría ni actores");
+  const summaryFields = Object.keys(doc.components.schemas.OrderSummary?.properties ?? {});
+  assert.ok(!summaryFields.includes("ownerUserId") &&
+    !summaryFields.includes("shippingAddress"),
+    "BKL-042: listado CLIENT no revela datos ajenos ni dirección");
+  for (const [route, schema] of [
+    ["/api/admin/orders", "AdminOrderPage"],
+    ["/api/admin/orders/{id}", "AdminOrderDetail"]
+  ]) {
+    const op = doc.paths[route]?.get;
+    assert.equal(op?.["x-implementation-status"], "implemented",
+      "BKL-042: lectura ADMIN no implementada");
+    assert.deepEqual(op?.security, [{ bearerAuth: [] }],
+      "BKL-042: lectura ADMIN requiere Bearer");
+    assert.equal(op?.responses?.["200"]?.content?.["application/json"]?.schema?.$ref,
+      "#/components/schemas/" + schema,
+      "BKL-042: respuesta ADMIN requiere DTO autorizado");
+  }
+  for (const route of ["/api/orders", "/api/admin/orders"]) {
+    const params = doc.paths[route].get.parameters ?? [];
+    assert.equal(params.find(p => p.name === "limit" && p.in === "query")?.schema?.maximum,
+      100, "BKL-042: máximo 100 filas por página");
+    assert.equal(params.find(p => p.name === "beforeId" && p.in === "query")?.schema?.minimum,
+      1, "BKL-042: cursor positivo");
+    assert.ok(!params.some(p => p.name === "userId" || p.name === "ownerUserId"),
+      "BKL-042: identidad no puede provenir del navegador");
+  }
+  assert.equal(proposedCount, 0, "BKL-042: ya no quedan rutas pendientes");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
       `Catálogo aún no marcado como implementado: ${route}`);

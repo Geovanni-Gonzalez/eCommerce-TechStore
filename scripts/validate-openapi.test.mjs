@@ -8,8 +8,8 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 28);
-  assert.equal(result.proposedCount, 2);
+  assert.equal(result.operationCount, 31);
+  assert.equal(result.proposedCount, 0);
 });
 
 test("rechaza referencias inexistentes", () => {
@@ -211,4 +211,44 @@ test("BKL-041 obliga auth ADMIN y respuesta solo con evidencias de incidencias",
   tampered.components.schemas.PaymentIncident.properties.reason.enum.pop();
   assert.throws(() => validateContract(tampered),
     /causas de riesgo consistentes con Flyway V15/);
+});
+
+test("BKL-042 exige Bearer en lecturas del CLIENT y ADMIN", () => {
+  for (const route of ["/api/orders", "/api/orders/{id}",
+    "/api/orders/{id}/history", "/api/admin/orders", "/api/admin/orders/{id}"]) {
+    const copy = clone();
+    delete copy.paths[route].get.security;
+    assert.throws(() => validateContract(copy),
+      /BKL-042: lectura CLIENT requiere Bearer|BKL-042: lectura ADMIN requiere Bearer/);
+  }
+});
+
+test("BKL-042 evita exponer actorId, ownerUserId o PII en DTO CLIENT", () => {
+  const adminDto = clone();
+  adminDto.paths["/api/orders"].get.responses["200"]
+    .content["application/json"].schema.$ref = "#/components/schemas/AdminOrderPage";
+  assert.throws(() => validateContract(adminDto),
+    /BKL-042: CLIENT no debe recibir DTO administrativo/);
+  const actorLeak = clone();
+  actorLeak.components.schemas.OrderTimelineEntry.properties.actorId =
+    {type:"integer",format:"int64"};
+  assert.throws(() => validateContract(actorLeak),
+    /BKL-042: historial CLIENT sin IDs/);
+  const addressLeak = clone();
+  addressLeak.components.schemas.OrderSummary.properties.shippingAddress =
+    {$ref:"#/components/schemas/ShippingAddress"};
+  assert.throws(() => validateContract(addressLeak),
+    /BKL-042: listado CLIENT no revela datos ajenos/);
+});
+
+test("BKL-042 impone paginación acotada sin propietario elegido", () => {
+  const page = clone();
+  page.paths["/api/orders"].get.parameters.find(p => p.name === "limit")
+    .schema.maximum = 1000;
+  assert.throws(() => validateContract(page), /BKL-042: máximo 100 filas/);
+  const spoof = clone();
+  spoof.paths["/api/orders"].get.parameters.push(
+    {in:"query", name:"userId", schema:{type:"integer"}});
+  assert.throws(() => validateContract(spoof),
+    /BKL-042: identidad no puede provenir del navegador/);
 });
