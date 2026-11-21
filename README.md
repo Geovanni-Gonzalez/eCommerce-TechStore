@@ -382,3 +382,8 @@ La API admite `POST /api/orders/{id}/cancel` con Bearer **CLIENT** propietario: 
 ## BKL-045 — Estados de pedidos con historial auditable
 
 Flyway **V10** añade `order_status_history`. El checkout registra `CREATED` y las cancelaciones del cliente, el scheduler y ADMIN registran `CLIENT_CANCEL`, `EXPIRED` o `ADMIN_CANCEL`, siempre en la misma transacción que devuelve stock. `PATCH /api/admin/orders/{id}/status` permite cancelar PENDING (Bearer ADMIN) y `GET /api/admin/orders/{id}/history` consulta la traza. **CONFIRMED queda exclusivamente para el flujo de pagos BKL-040**. Ver [BKL-045 — historial y transiciones](docs/backend/ORDER_STATUS_LIFECYCLE.md).
+
+
+## BKL-035 — Puerto de pagos y sandbox seguro
+
+`PaymentGateway` define el contrato desacoplado para una autorización simulada. En configuración predeterminada, **DISABLED** rechaza solicitudes y **no crea cobros**. Para una demostración controlada y **sin proveedor externo**, habilitar expresamente `TECHSTORE_PAYMENT_PROVIDER=SANDBOX` y `TECHSTORE_PAYMENT_SANDBOX_ENABLED=true`; `TECHSTORE_PAYMENT_SANDBOX_OUTCOME=APPROVED|DECLINED` controla solo el resultado simulado. El sandbox no recibe datos de tarjetas ni credenciales, no llama a redes y **no confirma pedidos ni libera/consume inventario**. Los intentos persistentes y la idempotencia de pagos corresponden a BKL-036; la confirmación de pedidos ante pago real, a BKL-040. [Contrato, flujo y límites](docs/backend/PAYMENT_GATEWAY_SANDBOX.md).
