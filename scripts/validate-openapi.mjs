@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 22, "Se esperan 22 operaciones de API");
+  assert.equal(operationCount, 23, "Se esperan 23 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -153,6 +153,26 @@ export function validateContract(doc) {
     "BKL-036: el intento debe devolver DTO persistente");
   assert.ok(paymentSubmit.responses["200"] && paymentSubmit.responses["409"],
     "BKL-036: replay y conflicto de idempotencia son parte del contrato");
+  const webhook = doc.paths["/api/payments/webhooks/sandbox"]?.post;
+  assert.equal(webhook?.["x-implementation-status"], "implemented",
+    "BKL-038: el webhook debe figurar implementado de forma condicional");
+  assert.deepEqual(webhook.security, [{ webhookSignature: [] }],
+    "BKL-038: el webhook exige autenticación HMAC, no Bearer");
+  assert.equal(doc.components.securitySchemes.webhookSignature?.name,
+    "X-TechStore-Webhook-Signature",
+    "BKL-038: falta declaración de firma HMAC");
+  assert.equal(webhook.parameters?.find(p =>
+      p.name === "X-TechStore-Webhook-Timestamp" && p.in === "header")?.required,
+    true, "BKL-038: timestamp firmado requerido");
+  assert.equal(webhook.requestBody?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/SandboxWebhookEvent",
+    "BKL-038: body del evento debe ser estricto");
+  assert.equal(webhook.responses["202"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/VerifiedWebhookReceipt",
+    "BKL-038: deduplicación debe devolver acuse de recepción");
+  assert.ok(webhook.responses["200"] && webhook.responses["401"]
+    && webhook.responses["409"],
+    "BKL-038: contrato exige replay, autenticación y conflicto");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",

@@ -1587,6 +1587,106 @@
         ],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/payments/webhooks/sandbox": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "receiveVerifiedSandboxWebhook",
+        "summary": "Recibir webhook de sandbox firmado y deduplicado (opt-in)",
+        "description": "Deshabilitado por defecto (sin endpoint registrado). Al activarlo requiere secreto externo de >=32 bytes, HMAC-SHA256 sobre bytes originales precedidos por timestamp, ventana de ±300 segundos y coincidencia de proveedor/importe/referencia con un intento previamente simulado. Primera recepción 202, replay idéntico 200; payload contradictorio 409. Nunca confirma orders ni consume reservas. Dependencia BKL-037 aún pendiente; no es integración bancaria real.",
+        "parameters": [
+          {
+            "name": "X-TechStore-Webhook-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{10,11}$"
+            },
+            "description": "Unix epoch seconds UTC, firmado junto con cuerpo y válido ±300 s"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxWebhookEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reintento idéntico previamente persistido; no se repite ningún efecto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedWebhookReceipt"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Evento firmado aceptado y persistido por primera vez",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedWebhookReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Evento JSON inválido, UTF-8 inválido o body excesivo",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Firma/timestamp ausente, inválido o vencido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Referencia desconocida, monto/resultado contradictorio, eventId reutilizado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Se requiere application/json",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "webhookSignature": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -1596,6 +1696,12 @@
         "scheme": "bearer",
         "bearerFormat": "Opaque",
         "description": "Token opaco aleatorio Bearer de 256 bits, duración de 8 horas y revocación en PostgreSQL; NO es un JWT. Usar HTTPS fuera del desarrollo local."
+      },
+      "webhookSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-TechStore-Webhook-Signature",
+        "description": "Solo sandbox opt-in: HMAC-SHA256 v1=<hex64> sobre timestamp ASCII + '.' + bytes originales JSON; timestamp Unix UTC en X-TechStore-Webhook-Timestamp; ±300 s. No aceptar token Bearer en lugar de firma."
       }
     },
     "schemas": {
@@ -2481,6 +2587,73 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SandboxWebhookEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Notificación local simulada, no recibo bancario; el servidor comprueba firma, referencia, pedido, monto e intento registrado.",
+        "required": [
+          "eventId",
+          "providerReference",
+          "orderId",
+          "totalCrc",
+          "outcome"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 80,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$"
+          },
+          "providerReference": {
+            "type": "string",
+            "pattern": "^SBX-[A-Z0-9-]{8,60}$"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "totalCrc": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "description": "Total del intento persistido, calculado por backend"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "DECLINED"
+            ]
+          }
+        }
+      },
+      "VerifiedWebhookReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "eventId",
+          "paymentAttemptId",
+          "duplicate"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "paymentAttemptId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "duplicate": {
+            "type": "boolean"
           }
         }
       }

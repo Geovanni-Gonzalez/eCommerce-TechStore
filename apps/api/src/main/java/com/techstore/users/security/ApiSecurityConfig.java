@@ -54,6 +54,8 @@ public class ApiSecurityConfig {
                                 "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/sandbox")
+                            .permitAll() // HMAC y timestamp son autenticación del proveedor
                         .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/cancel").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/payment-attempts")

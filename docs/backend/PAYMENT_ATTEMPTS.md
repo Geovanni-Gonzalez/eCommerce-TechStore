@@ -68,3 +68,8 @@ Orden de bloqueos: `orders FOR UPDATE` antes de consultar reservas e intentos; c
 ## Límites explícitos
 
 No existe integración bancaria ni autorización de cobro real. La idempotencia de **solicitudes** a TechStore se garantiza mediante la base y la no repetición de una clave; un proveedor externo futuro también deberá aceptar una clave propia, confirmaciones verificadas, conciliación operacional y controles anti-cobro duplicado. No enviar PAN/CVV; las claves no son credenciales. `SIMULATED_APPROVED` es artificial y nunca debe utilizarse para pasar `orders.status` a `CONFIRMED` sin desarrollar y validar BKL-038/BKL-040.
+
+
+## BKL-038 — Webhooks auténticos de sandbox
+
+Un webhook firmado con HMAC-SHA256 y timestamp reciente se acepta únicamente al coincidir con un intento simulado persistido. V12 registra el evento deduplicado y su digest. No transforma la autorización sandbox en pago bancario ni cambia el pedido. Documentación: [WEBHOOK_VERIFICATION.md](WEBHOOK_VERIFICATION.md).

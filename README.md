@@ -392,3 +392,8 @@ Flyway **V10** añade `order_status_history`. El checkout registra `CREATED` y l
 ## BKL-036 — Intentos de pago persistentes e idempotentes
 
 La API incorpora `POST /api/orders/{orderId}/payment-attempts` (Bearer CLIENT, `Idempotency-Key`, **sin body**) y `GET /api/orders/{orderId}/payment-attempts/{attemptId}`. Flyway **V11** guarda intentos y referencias simuladas únicas, y evita reenviar autorizaciones al repetir claves; estados inciertos quedan pendientes de conciliación. El proveedor sigue deshabilitado por defecto y **SIMULATED_APPROVED no confirma pedidos ni acredita cobros reales**. Véase [BKL-036 — intentos, concurrencia y conciliación](docs/backend/PAYMENT_ATTEMPTS.md).
+
+
+## BKL-038 — Webhook de sandbox autenticado y deduplicado
+
+**Flyway V12** añade el ledger `payment_webhook_events` con claves únicas por evento e intento; `POST /api/payments/webhooks/sandbox` recibe HMAC-SHA256 firmado sobre el body exacto y timestamp ±5 minutos. Está **deshabilitado por defecto** y solo se habilita con `TECHSTORE_PAYMENT_WEBHOOK_ENABLED=true` y un secreto aleatorio fuerte `TECHSTORE_PAYMENT_WEBHOOK_SECRET` suministrado fuera del repositorio. Se registra un evento válido una única vez sin confirmar pedidos ni afectar inventario. **BKL-037 sigue pendiente**: esto no representa una pasarela bancaria real. Véase [seguridad, contrato y conciliación BKL-038](docs/backend/WEBHOOK_VERIFICATION.md).

@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 22);
+  assert.equal(result.operationCount, 23);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -143,4 +143,20 @@ test("BKL-036 prohíbe endpoint de pagos sin Bearer o sin clave de idempotencia"
     .get["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(planned),
     /consulta de intento debe estar implementada/);
+});
+
+test("BKL-038 rechaza contrato sin firma HMAC, timestamp o respuesta de replay", () => {
+  const unsigned = clone();
+  delete unsigned.paths["/api/payments/webhooks/sandbox"].post.security;
+  assert.throws(() => validateContract(unsigned), /autenticación HMAC/);
+  const missingTime = clone();
+  missingTime.paths["/api/payments/webhooks/sandbox"].post.parameters = [];
+  assert.throws(() => validateContract(missingTime), /timestamp firmado requerido/);
+  const missingReplay = clone();
+  delete missingReplay.paths["/api/payments/webhooks/sandbox"].post.responses["200"];
+  assert.throws(() => validateContract(missingReplay), /contrato exige replay/);
+  const planned = clone();
+  planned.paths["/api/payments/webhooks/sandbox"].post["x-implementation-status"] = "planned";
+  assert.throws(() => validateContract(planned),
+    /webhook debe figurar implementado de forma condicional/);
 });

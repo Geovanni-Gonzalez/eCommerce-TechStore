@@ -33,6 +33,11 @@ techstore:
       enabled: ${TECHSTORE_PAYMENT_SANDBOX_ENABLED:false}
       # Solo para demostraciones sin cobros reales; nunca selecciona un pago real.
       outcome: ${TECHSTORE_PAYMENT_SANDBOX_OUTCOME:DECLINED}
+    webhook:
+      # BKL-038: SOLO callback simulado. Apagado por defecto.
+      enabled: ${TECHSTORE_PAYMENT_WEBHOOK_ENABLED:false}
+      # Exigir secreto >= 32 bytes desde entorno (no almacenar ni imprimir).
+      secret: ${TECHSTORE_PAYMENT_WEBHOOK_SECRET:}
 
 # Exponer únicamente la salud; no divulgar detalles internos en HTTP.
 management:
