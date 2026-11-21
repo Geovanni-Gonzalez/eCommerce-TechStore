@@ -33,6 +33,8 @@ techstore:
       enabled: ${TECHSTORE_PAYMENT_SANDBOX_ENABLED:false}
       # Solo para demostraciones sin cobros reales; nunca selecciona un pago real.
       outcome: ${TECHSTORE_PAYMENT_SANDBOX_OUTCOME:DECLINED}
+      # Únicamente uno de los orígenes permitidos en CORS; sin open redirect.
+      redirect-origin: ${TECHSTORE_PAYMENT_SANDBOX_REDIRECT_ORIGIN:http://localhost:3000}
     webhook:
       # BKL-038: SOLO callback simulado. Apagado por defecto.
       enabled: ${TECHSTORE_PAYMENT_WEBHOOK_ENABLED:false}
