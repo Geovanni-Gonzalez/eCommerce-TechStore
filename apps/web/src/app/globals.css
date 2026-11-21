@@ -78,3 +78,16 @@ p { line-height: 1.7; }
   .nav-list { gap: .8rem; }
   .container { padding: 1.5rem 1rem; }
 }
+
+.sandbox-submit {
+  border: 0;
+  border-radius: .5rem;
+  padding: .85rem 1.2rem;
+  background: var(--color-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sandbox-submit:hover:not(:disabled) { background: #11365e; }
+.sandbox-submit:disabled { opacity: .7; cursor: progress; }
