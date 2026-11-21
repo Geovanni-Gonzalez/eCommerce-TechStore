@@ -260,6 +260,7 @@ export default function PaymentResultClient() {
           )}
         </>
       )}
+      <p><Link href="/pedidos">Consultar mi historial de pedidos</Link></p>
       <p><Link href="/">Volver a TechStore</Link></p>
     </section>
   );

@@ -54,6 +54,9 @@ jobs:
       - name: Probar clasificación de resultados de pago confiables
         run: node --experimental-strip-types --test apps/web/src/lib/payment-result.test.mjs
 
+      - name: Probar historial de pedidos y controles de privacidad BKL-043
+        run: node --experimental-strip-types --test apps/web/src/lib/order-history.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
@@ -85,6 +88,15 @@ jobs:
             fi
             echo "HTTP 200 sin resultado no verificado: ${path}"
           done
+          # BKL-043: SSR del historial no expone pedidos ni direcciones sin Bearer.
+          orders_html="$(curl --fail --silent --show-error http://127.0.0.1:3000/pedidos)"
+          [[ "$orders_html" == *"Mis pedidos"* ]]
+          [[ "$orders_html" == *"Acceso privado"* ]]
+          if [[ "$orders_html" == *"<address"* || "$orders_html" == *"Casa de entrega"* ]]; then
+            echo "ERROR: la página de historial divulga PII antes de autenticar"
+            exit 1
+          fi
+          echo "HTTP 200: /pedidos (sin datos de cliente)"
           for path in / /productos /carrito /login; do
             curl --fail --silent --show-error "http://127.0.0.1:3000${path}" -o /dev/null
             echo "HTTP 200: ${path}"
