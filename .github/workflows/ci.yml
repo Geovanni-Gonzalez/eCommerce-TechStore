@@ -57,6 +57,9 @@ jobs:
       - name: Probar historial de pedidos y controles de privacidad BKL-043
         run: node --experimental-strip-types --test apps/web/src/lib/order-history.test.mjs
 
+      - name: Probar catálogo y detalle BKL-019
+        run: node --experimental-strip-types --test apps/web/src/lib/catalog.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
