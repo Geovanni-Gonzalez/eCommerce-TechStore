@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Preview = {
   attemptId: number;
@@ -45,28 +45,36 @@ export default function SandboxCheckoutClient() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
 
+  const initializationStarted = useRef(false);
+
   useEffect(() => {
+    // Strict Mode puede montar el efecto dos veces en desarrollo.
+    if (initializationStarted.current) return;
+    initializationStarted.current = true;
     const fragment = window.location.hash;
     // El fragmento nunca se transmite en la petición GET HTTP.
     window.history.replaceState(
       null, "", window.location.pathname + window.location.search,
     );
     const match = /^#session=([A-Za-z0-9_-]{43})$/.exec(fragment);
-    if (!match) {
-      setError("Enlace de sandbox ausente o incorrecto.");
-      setStage("error");
-      return;
-    }
-    const sessionToken = match[1];
-    setToken(sessionToken);
-    void request<Preview>(
-      "/api/payments/sandbox/sessions/preview", sessionToken,
-    ).then((data) => {
-      setPreview(data);
-      setStage("ready");
-    }).catch((failure: unknown) => {
-      setError(failure instanceof Error ? failure.message : "Sesión inválida.");
-      setStage("error");
+    // Se evita establecer estado de forma síncrona dentro de un efecto.
+    void Promise.resolve().then(() => {
+      if (!match) {
+        setError("Enlace de sandbox ausente o incorrecto.");
+        setStage("error");
+        return;
+      }
+      const sessionToken = match[1];
+      setToken(sessionToken);
+      void request<Preview>(
+        "/api/payments/sandbox/sessions/preview", sessionToken,
+      ).then((data) => {
+        setPreview(data);
+        setStage("ready");
+      }).catch((failure: unknown) => {
+        setError(failure instanceof Error ? failure.message : "Sesión inválida.");
+        setStage("error");
+      });
     });
   }, []);
 
