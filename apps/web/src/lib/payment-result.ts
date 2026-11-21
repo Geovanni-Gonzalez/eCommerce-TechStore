@@ -104,3 +104,16 @@ export function parseResultId(value: string | null): number | null {
   const id = Number(value);
   return validId(id) ? id : null;
 }
+
+/** Nunca enviar email, contraseña o Bearer sobre HTTP remoto ni URLs con credenciales. */
+export function isSafeApiOrigin(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    return (url.protocol === "https:" || (url.protocol === "http:" && loopback))
+      && !url.username && !url.password && !url.search && !url.hash
+      && url.pathname === "/";
+  } catch {
+    return false;
+  }
+}

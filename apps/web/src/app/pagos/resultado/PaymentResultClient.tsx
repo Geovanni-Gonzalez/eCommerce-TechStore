@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
-  classifyPaymentResult, parseResultId,
+  classifyPaymentResult, isSafeApiOrigin, parseResultId,
   type VerifiedPaymentResult,
 } from "@/lib/payment-result";
 
@@ -28,6 +28,9 @@ async function readJson(response: Response): Promise<unknown> {
 }
 
 async function authenticatedGet(path: string, bearer: string): Promise<unknown> {
+  if (!isSafeApiOrigin(API_BASE)) {
+    throw new Error("API insegura: se requiere HTTPS (HTTP solo localhost).");
+  }
   const response = await fetch(API_BASE + path, {
     method: "GET",
     headers: { Accept: "application/json", Authorization: "Bearer " + bearer },
@@ -105,6 +108,9 @@ export default function PaymentResultClient() {
     setMessage("");
     setVerified(null);
     try {
+      if (!isSafeApiOrigin(API_BASE)) {
+        throw new Error("API insegura: se requiere HTTPS (HTTP solo localhost).");
+      }
       const response = await fetch(API_BASE + "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },

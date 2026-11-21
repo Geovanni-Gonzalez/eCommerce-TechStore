@@ -44,3 +44,7 @@ La ruta no ejecuta `POST payment-attempts` ni reintenta la autorización; solo c
 El *smoke test* HTTP abre las cuatro rutas y verifica que el servidor de producción Next.js **no afirma que un pedido fue confirmado por el backend antes de autenticar**. Las rutas se incluyen además en lint, typecheck y build de Next.js. Para probar la UI manualmente, usar el sandbox local habilitado sin dinero real, completar `/pagos/sandbox` y acceder al enlace de resultado; un evento HMAC verificado con BKL-040 opt-in puede cambiar `PENDING` a `CONFIRMED` en modo simulación.
 
 **Limitación explícita:** BKL-017 debe unificar el formulario de login y la gestión de la sesión del frontend. Esta consulta puntual evita bloquear BKL-039, pero no sustituye el flujo general de autenticación. En ningún caso debe utilizarse una pantalla simulada como prueba de fondos reales.
+
+## Origen seguro de credenciales
+
+La función `isSafeApiOrigin` bloquea autenticación y consultas Bearer cuando `NEXT_PUBLIC_API_URL` usa **HTTP remoto**, credenciales incrustadas en la URL, querystring, fragmentos o rutas inesperadas. Solo admite **HTTPS** o **HTTP en loopback local** (`localhost`, `127.0.0.1`, `::1`) para la demostración. Hay pruebas de URLs peligrosas en la suite Node 22.

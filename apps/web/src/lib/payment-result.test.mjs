@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyPaymentResult, parseResultId } from "./payment-result.ts";
+import { classifyPaymentResult, isSafeApiOrigin, parseResultId } from "./payment-result.ts";
 
 const order = (status = "PENDING") => ({
   id: 27, status, paymentMode: "SIMULATED",
@@ -58,4 +58,15 @@ test("BKL-039: identificadores URL no admiten inyección ni resultados", () => {
   }
   assert.equal(parseResultId("27"), 27);
   assert.equal(parseResultId(null), null);
+});
+
+test("BKL-039: credenciales solo a origen HTTPS o loopback local explícito", () => {
+  assert.equal(isSafeApiOrigin("http://localhost:8080"), true);
+  assert.equal(isSafeApiOrigin("http://127.0.0.1:8080"), true);
+  assert.equal(isSafeApiOrigin("https://api.techstore.example"), true);
+  for (const url of ["http://api.techstore.example", "ftp://api.example",
+    "//api.example", "https://user:pass@api.example", "https://api.example/path",
+    "https://api.example?secret=1", "https://api.example/#token"]) {
+    assert.equal(isSafeApiOrigin(url), false, url);
+  }
 });
