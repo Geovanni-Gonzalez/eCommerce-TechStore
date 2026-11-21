@@ -1,0 +1,161 @@
+/* BKL-019 — catálogo público, adaptable y accesible. */
+.catalog-page { min-width: 0; }
+.catalog-intro {
+  max-width: 760px;
+  margin: 0 0 1.5rem;
+}
+.catalog-intro h1 { margin: .4rem 0 .8rem; }
+.catalog-intro .lead { color: #41576d; }
+.catalog-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.2rem;
+  color: #41576d;
+  font-size: .94rem;
+}
+.catalog-toolbar p { margin: 0; }
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 1.15rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.catalog-grid > li { min-width: 0; }
+.catalog-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d5dfe9;
+  border-radius: .9rem;
+  box-shadow: 0 5px 15px rgb(16 44 75 / 5%);
+}
+.catalog-card:hover { box-shadow: 0 10px 24px rgb(16 44 75 / 11%); }
+.catalog-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #e8eff7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.catalog-photo__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f0f5fa;
+}
+.catalog-photo--empty {
+  flex-direction: column;
+  gap: .55rem;
+  color: #60768d;
+}
+.catalog-photo--empty span { font-size: .78rem; font-weight: 600; }
+.catalog-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+.catalog-card__category { margin: 0 0 .2rem; color: #5a6d80; font-size: .83rem; }
+.catalog-card h2 { margin: .3rem 0 .75rem; font-size: 1.23rem; line-height: 1.3; }
+.catalog-card h2 a { text-decoration: none; }
+.catalog-card h2 a:hover { text-decoration: underline; }
+.catalog-price {
+  margin: 0 0 .75rem; font-size: 1.35rem;
+  font-weight: 800; color: #173f71;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-stock {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: .4rem .7rem;
+  border-radius: 2rem;
+  font-size: .83rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: .15rem 0 1rem;
+}
+.catalog-stock--available { background: #e6f5ec; color: #225d40; }
+.catalog-stock--none { background: #fff0e8; color: #86452c; }
+.catalog-detail-link {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: .5rem;
+  align-items: center;
+  margin-top: auto;
+  font-weight: 700;
+  text-underline-offset: 3px;
+  padding: .4rem 0;
+}
+.catalog-feedback {
+  border: 1px solid #d5dfe9;
+  border-radius: .85rem;
+  background: #fff;
+  padding: clamp(1.5rem, 4vw, 2.4rem);
+  margin: 1.2rem 0;
+}
+.catalog-feedback h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); }
+.catalog-feedback h2 { font-size: 1.3rem; }
+.catalog-button {
+  border: 1px solid #184b83;
+  color: white;
+  background: #184b83;
+  border-radius: .5rem;
+  padding: .7rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.catalog-button:hover { background: #12365d; }
+.catalog-button:focus-visible { outline: 3px solid #d87018; outline-offset: 3px; }
+.catalog-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(.7rem, 2vw, 1.5rem);
+  margin: 2rem 0 0;
+}
+.catalog-pagination a { font-weight: 700; padding: .65rem .9rem; background: #fff; border: 1px solid #b6c9da; border-radius: .45rem; }
+.catalog-pagination span[aria-disabled="true"] { color: #677b8e; }
+.catalog-breadcrumb {
+  display: flex; align-items: center; gap: .65rem;
+  color: #4d6378; font-size: .95rem; margin: 0 0 1.5rem;
+}
+.catalog-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1.2rem, 4vw, 3rem);
+  align-items: start;
+}
+.catalog-product .catalog-photo { border-radius: .9rem; border: 1px solid #d5dfe9; }
+.catalog-product__content { min-width: 0; }
+.catalog-product__content h1 { margin: .25rem 0 .8rem; font-size: clamp(2rem, 4.5vw, 3.15rem); }
+.catalog-product__content h2 { margin: 1.4rem 0 .4rem; font-size: 1.15rem; }
+.catalog-product__sku { font-size: .88rem; color: #52667c; }
+.catalog-product__price {
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+  font-weight: 800;
+  color: #173f71;
+  margin: 1.3rem 0 .7rem;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-product__note {
+  border-left: 4px solid #c5d6e7;
+  padding: .7rem 1rem;
+  background: #eef4fa;
+  color: #41576d;
+  font-size: .9rem;
+}
+@media (max-width: 700px) {
+  .catalog-product { grid-template-columns: 1fr; }
+  .catalog-intro h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
+}
