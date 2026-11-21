@@ -56,6 +56,10 @@ public class ApiSecurityConfig {
                                 "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/sandbox")
                             .permitAll() // HMAC y timestamp son autenticación del proveedor
+                        // BKL-042: los listados y detalles de CLIENT nunca son públicos.
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/orders", "/api/orders/*",
+                                "/api/orders/*/history").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/cancel").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/payment-sessions")

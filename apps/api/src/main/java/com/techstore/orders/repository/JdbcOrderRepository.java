@@ -90,26 +90,38 @@ public class JdbcOrderRepository implements OrderRepository {
         if (userId < 1 || orderId < 1) {
             return Optional.empty();
         }
+        return readOrder("WHERE id = ? AND user_id = ?", orderId, userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Order> findByIdForAdmin(long orderId) {
+        if (orderId < 1) {
+            return Optional.empty();
+        }
+        return readOrder("WHERE id = ?", orderId);
+    }
+
+    private Optional<Order> readOrder(String whereClause, Object... params) {
+        // whereClause proviene únicamente de literales de esta clase,
+        // nunca de parámetros HTTP o del usuario.
         List<OrderHeader> headers = jdbc.query("""
                 SELECT id, user_id, status, payment_mode,
                        ship_province, ship_canton, ship_district, ship_details,
                        ship_recipient_name, ship_phone,
-                       subtotal_crc, shipping_crc, tax_crc, total_crc,
-                       created_at
+                       subtotal_crc, shipping_crc, tax_crc, total_crc, created_at
                 FROM orders
-                WHERE id = ? AND user_id = ?
-                """, HEADER_MAPPER, orderId, userId);
+                """ + whereClause, HEADER_MAPPER, params);
         if (headers.isEmpty()) {
             return Optional.empty();
         }
-
         OrderHeader header = headers.getFirst();
         List<OrderItemSnapshot> items = jdbc.query("""
                 SELECT product_id, product_name, quantity, unit_price_crc
                 FROM order_items
                 WHERE order_id = ?
                 ORDER BY line_number
-                """, ITEM_MAPPER, orderId);
+                """, ITEM_MAPPER, header.id());
         return Optional.of(new Order(
                 header.id(), header.userId(), header.status(),
                 header.paymentMode(), header.address(), items,

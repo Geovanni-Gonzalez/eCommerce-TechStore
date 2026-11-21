@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface OrderRepository {
     Order saveDraft(OrderDraft draft);
     Optional<Order> findByIdForUser(long userId, long orderId);
+    /** Solo invocar desde rutas con ROLE_ADMIN. */
+    Optional<Order> findByIdForAdmin(long orderId);
 }

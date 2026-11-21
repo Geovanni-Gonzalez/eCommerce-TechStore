@@ -412,3 +412,8 @@ Flyway **V14** registra el estado de conciliación de webhooks y el motivo de tr
 ## BKL-041 — Rechazo, caducidad y conciliación incierta
 
 Flyway **V15** registra incidencias de autorizaciones inciertas, aprobaciones sin conciliar y webhooks tardíos. Cancelación y vencimiento conservan stock reservado ante `STARTED/UNKNOWN/SIMULATED_APPROVED` potencialmente ejecutados; la única excepción es una sesión hosted `STARTED` **que nunca se canjeó**, ya que no realizó autorización. Rechazos y `UNAVAILABLE` pueden liberarse según caducidad. Endpoint `GET /api/admin/orders/{orderId}/payment-incidents` (solo ADMIN), sin posibilidad de forzar pago o devolución. [Política detallada BKL-041](docs/backend/PAYMENT_FAILURE_RECONCILIATION.md).
+
+
+## BKL-042 — Consultas seguras de pedidos
+
+Las rutas **CLIENT** `GET /api/orders`, `GET /api/orders/{id}` y `GET /api/orders/{id}/history` filtran por el usuario autenticado, usan paginación por cursor `limit`/`beforeId` y devuelven 404 para pedidos ajenos o inexistentes. Las rutas **ADMIN** `GET /api/admin/orders` y `GET /api/admin/orders/{id}` usan DTO separados que muestran el propietario. El historial CLIENT no divulga IDs de actores ni auditoría. OpenAPI **31 operaciones**. [Detalles de BKL-042](docs/backend/ORDER_READ_API.md).
