@@ -13,6 +13,7 @@ export default function CartClient() {
   const { user, getToken, logout } = useAuth();
   const token = user?.role === "CLIENT" ? getToken() : null;
   const [cart, setCart] = useState<Cart | null>(null);
+  const [loadedToken, setLoadedToken] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,38 +28,35 @@ export default function CartClient() {
     sessionRef.current = token;
     const request = ++requestRef.current;
     const controller = new AbortController();
-    setCart(null);
-    setDrafts({});
-    setNotice("");
-    setError("");
-    setConfirmClear(false);
-    if (!token) {
-      setLoading(false);
-      return () => controller.abort();
-    }
-    setLoading(true);
+    if (!token) return () => controller.abort();
     void getCart(token, controller.signal).then(data => {
       if (controller.signal.aborted || request !== requestRef.current
           || sessionRef.current !== token) return;
       setCart(data);
+      setLoadedToken(token);
+      setDrafts({});
+      setNotice("");
+      setError("");
+      setConfirmClear(false);
       setLoading(false);
     }).catch((cause: unknown) => {
       if (controller.signal.aborted || request !== requestRef.current
           || sessionRef.current !== token) return;
+      setCart(null);
+      setLoadedToken(token);
       setLoading(false);
       if (cause instanceof CartHttpError && cause.status === 401) {
         void logout();
-        setError("La sesión expiró. Inicia sesión de nuevo.");
       } else {
         setError(cause instanceof Error ? cause.message : "No se pudo cargar el carrito.");
       }
     });
     return () => {
       controller.abort();
-      requestRef.current++;
+      requestRef.current = request + 1;
       sessionRef.current = null;
     };
-  }, [token, user?.id]); // Un cambio de cuenta invalida todo dato privado.
+  }, [token, user?.id, logout]); // Un cambio de cuenta invalida todo dato privado.
 
   async function refresh() {
     if (!token || mutationRef.current) return;
@@ -121,7 +119,8 @@ export default function CartClient() {
     }
   }
 
-  const currentCart = token && !loading ? cart : null;
+  const fetchingForToken = Boolean(token && loadedToken !== token);
+  const currentCart = token && loadedToken === token && !loading ? cart : null;
   return (
     <section className="cart-page" aria-labelledby="cart-heading">
       <header className="cart-intro">
@@ -143,10 +142,10 @@ export default function CartClient() {
         </div>
       ) : (
         <>
-          {loading && <p className="cart-panel" role="status">Consultando tu carrito…</p>}
-          {error && <p className="cart-error" role="alert">{error}</p>}
-          {notice && <p className="cart-success" role="status">{notice}</p>}
-          {!loading && !cart && (
+          {(loading || fetchingForToken) && <p className="cart-panel" role="status">Consultando tu carrito…</p>}
+          {loadedToken === token && error && <p className="cart-error" role="alert">{error}</p>}
+          {loadedToken === token && notice && <p className="cart-success" role="status">{notice}</p>}
+          {!loading && !fetchingForToken && !cart && (
             <div className="cart-panel">
               <h2>No se pudo mostrar el carrito</h2>
               <button type="button" className="cart-secondary"
