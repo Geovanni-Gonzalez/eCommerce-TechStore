@@ -28,7 +28,9 @@ try {
   await page.getByRole("button", {name:"Ingresar a mi cuenta"}).click();
   await page.waitForURL("**/cuenta",{timeout:15000});
 
-  await page.goto("http://localhost:3000/productos");
+  // La sesión BKL-017 está solo en memoria: navegar mediante Next Link,
+  // no con page.goto (que recarga y crea un AuthProvider nuevo).
+  await page.getByRole("link", {name:"Productos", exact:true}).click();
   await page.getByRole("link", {name:"Mouse inalámbrico Demo"}).click();
   await page.getByRole("button", {name:"Añadir Mouse inalámbrico Demo al carrito"}).click();
   await page.waitForURL("**/carrito",{timeout:15000});
@@ -56,14 +58,14 @@ try {
   await page.getByLabel("Contraseña").fill(password);
   await page.getByRole("button",{name:"Ingresar a mi cuenta"}).click();
   await page.waitForURL("**/cuenta",{timeout:15000});
-  await page.goto("http://localhost:3000/carrito");
+  await page.getByRole("link", {name:"Carrito", exact:true}).click();
   await page.getByText("Productos seleccionados (2)").waitFor();
   assert.equal(await page.getByRole("spinbutton",{name:"Cantidad de Mouse inalámbrico Demo"}).inputValue(),"2");
 
   await page.getByRole("button",{name:"Quitar Mouse inalámbrico Demo"}).click();
   await page.getByRole("heading",{name:"Tu carrito está vacío"}).waitFor();
 
-  await page.goto("http://localhost:3000/productos");
+  await page.getByRole("link", {name:"Productos", exact:true}).click();
   await page.getByRole("button",{name:"Añadir Teclado mecánico Demo al carrito"}).click();
   await page.waitForURL("**/carrito",{timeout:15000});
   await page.getByRole("button",{name:"Vaciar carrito"}).click();
