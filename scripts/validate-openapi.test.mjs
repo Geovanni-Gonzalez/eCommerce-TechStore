@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 23);
+  assert.equal(result.operationCount, 26);
   assert.equal(result.proposedCount, 2);
 });
 
@@ -159,4 +159,23 @@ test("BKL-038 rechaza contrato sin firma HMAC, timestamp o respuesta de replay",
   planned.paths["/api/payments/webhooks/sandbox"].post["x-implementation-status"] = "planned";
   assert.throws(() => validateContract(planned),
     /webhook debe figurar implementado de forma condicional/);
+});
+
+test("BKL-037 requiere Bearer e idempotencia, sin body de montos ni returnUrl", () => {
+  const noAuth = clone();
+  delete noAuth.paths["/api/orders/{orderId}/payment-sessions"].post.security;
+  assert.throws(() => validateContract(noAuth), /solo CLIENT autenticado inicia pago/);
+  const noKey = clone();
+  noKey.paths["/api/orders/{orderId}/payment-sessions"].post.parameters =
+    noKey.paths["/api/orders/{orderId}/payment-sessions"].post.parameters
+      .filter(p => p.name !== "Idempotency-Key");
+  assert.throws(() => validateContract(noKey), /inicio exige Idempotency-Key/);
+  const withBody = clone();
+  withBody.paths["/api/orders/{orderId}/payment-sessions"].post.requestBody =
+    {content: {"application/json": {schema: {type:"object"}}}};
+  assert.throws(() => validateContract(withBody), /rechazar monto, moneda, tarjeta y returnUrl/);
+  const noToken = clone();
+  noToken.paths["/api/payments/sandbox/sessions/preview"].post.requestBody =
+    {content: {"application/json": {schema: {type:"object"}}}};
+  assert.throws(() => validateContract(noToken), /solo se admite token efímero/);
 });

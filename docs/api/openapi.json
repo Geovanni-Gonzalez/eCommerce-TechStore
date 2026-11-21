@@ -1687,6 +1687,245 @@
         ],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/orders/{orderId}/payment-sessions": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "startSecureSandboxCheckout",
+        "summary": "Iniciar checkout sandbox propio y obtener URL de redirección segura",
+        "description": "Solo CLIENT propietario, header Idempotency-Key obligatorio, sin body. Monto histórico del pedido y moneda CRC fijados por backend. Comprueba PENDING y stock reservado vigente. Un claim STARTED + sesión se confirman en la misma transacción V13; replay de la clave rota el token anterior sin duplicar intento. Disponible solo con proveedor SANDBOX habilitado explícitamente. La URL va a /pagos/sandbox en un origen permitido, no a un banco; token aleatorio en fragmento, TTL máximo 10 min. Nunca acredita cobro ni confirma pedido.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Misma clave reemitida, sin otro intento; token anterior revocado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxSessionStarted"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Intento y sesión creados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxSessionStarted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Clave ausente o body prohibido (incluidos monto, moneda, tarjeta y retorno)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No tiene rol CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido inexistente o no perteneciente al cliente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pedido ya pagado/cancelado, reserva vencida o intento en conflicto",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/payments/sandbox/sessions/preview": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "previewHostedSandboxCheckout",
+        "summary": "Previsualizar sesión sandbox con token temporal",
+        "description": "La posesión del token es la única autorización, sin cookies ni Bearer. Rechaza expiración, canje, pedido cancelado/reserva vencida; sin datos del comprador.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxSessionTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión vigente o resultado simulado persistido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxSessionPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token o body inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Token desconocido, expirado, revocado, consumido o reserva no vigente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto de estado o de intento",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/payments/sandbox/sessions/complete": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "completeHostedSandboxCheckout",
+        "summary": "Canjear token una vez y ejecutar simulación",
+        "description": "Consumo durable de token antes de ejecutar SandboxPaymentGateway; otro canje no puede invocar el proveedor. Resultado SIMULATED_APPROVED/DECLINED, UNAVAILABLE o UNKNOWN; pedidos permanecen PENDING, stock RESERVED. No hay dinero real.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxSessionTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión vigente o resultado simulado persistido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAttempt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token o body inválido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Token desconocido, expirado, revocado, consumido o reserva no vigente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto de estado o de intento",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -2654,6 +2893,99 @@
           },
           "duplicate": {
             "type": "boolean"
+          }
+        }
+      },
+      "SandboxSessionStarted": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Redirección a sandbox local, moneda CRC y monto backend. Token secreto solo en fragmento de URL, no persistido en claro.",
+        "required": [
+          "attemptId",
+          "orderId",
+          "totalCrc",
+          "currency",
+          "expiresAt",
+          "redirectUrl"
+        ],
+        "properties": {
+          "attemptId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalCrc": {
+            "type": "number",
+            "multipleOf": 0.01
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "redirectUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Origen frontend fijo + /pagos/sandbox#session=<token> (fragmento no enviado en GET)"
+          }
+        }
+      },
+      "SandboxSessionPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attemptId",
+          "orderId",
+          "totalCrc",
+          "currency",
+          "expiresAt"
+        ],
+        "properties": {
+          "attemptId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalCrc": {
+            "type": "number",
+            "multipleOf": 0.01
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SandboxSessionTokenRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "description": "Token aleatorio de 256 bits emitido en fragmento, no tarjeta ni credencial de cuenta"
           }
         }
       }

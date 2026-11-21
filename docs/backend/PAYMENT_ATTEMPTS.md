@@ -73,3 +73,8 @@ No existe integración bancaria ni autorización de cobro real. La idempotencia 
 ## BKL-038 — Webhooks auténticos de sandbox
 
 Un webhook firmado con HMAC-SHA256 y timestamp reciente se acepta únicamente al coincidir con un intento simulado persistido. V12 registra el evento deduplicado y su digest. No transforma la autorización sandbox en pago bancario ni cambia el pedido. Documentación: [WEBHOOK_VERIFICATION.md](WEBHOOK_VERIFICATION.md).
+
+
+## Inicio de pago con redirección (BKL-037)
+
+El endpoint `POST /api/orders/{orderId}/payment-sessions` (CLIENT, Idempotency-Key, sin body) crea un intento STARTED y un token de sesión local sin llamar todavía al gateway. La redirección segura a `/pagos/sandbox` se canjea una sola vez en `/api/payments/sandbox/sessions/complete`. [Detalles y seguridad](SECURE_PAYMENT_REDIRECT.md).

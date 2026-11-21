@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 23, "Se esperan 23 operaciones de API");
+  assert.equal(operationCount, 26, "Se esperan 26 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -173,6 +173,36 @@ export function validateContract(doc) {
   assert.ok(webhook.responses["200"] && webhook.responses["401"]
     && webhook.responses["409"],
     "BKL-038: contrato exige replay, autenticación y conflicto");
+  const startSession = doc.paths["/api/orders/{orderId}/payment-sessions"]?.post;
+  const previewSession = doc.paths["/api/payments/sandbox/sessions/preview"]?.post;
+  const completeSession = doc.paths["/api/payments/sandbox/sessions/complete"]?.post;
+  for (const op of [startSession, previewSession, completeSession]) {
+    assert.equal(op?.["x-implementation-status"], "implemented",
+      "BKL-037: las sesiones sandbox deben declararse implementadas condicionalmente");
+  }
+  assert.deepEqual(startSession.security, [{ bearerAuth: [] }],
+    "BKL-037: solo CLIENT autenticado inicia pago");
+  const startKey = startSession.parameters?.find(p =>
+    p.in === "header" && p.name === "Idempotency-Key");
+  assert.equal(startKey?.required, true,
+    "BKL-037: inicio exige Idempotency-Key");
+  assert.equal(startSession.requestBody, undefined,
+    "BKL-037: rechazar monto, moneda, tarjeta y returnUrl del cliente");
+  assert.deepEqual(previewSession.security, [],
+    "BKL-037: preview autentica con token de sesión, no Bearer");
+  assert.deepEqual(completeSession.security, [],
+    "BKL-037: complete autentica con token de sesión, no Bearer");
+  for (const op of [previewSession, completeSession]) {
+    assert.equal(op.requestBody?.content?.["application/json"]?.schema?.$ref,
+      "#/components/schemas/SandboxSessionTokenRequest",
+      "BKL-037: solo se admite token efímero");
+  }
+  assert.equal(startSession.responses["201"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/SandboxSessionStarted",
+    "BKL-037: el inicio debe entregar URL de redirección");
+  assert.equal(completeSession.responses["200"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/PaymentAttempt",
+    "BKL-037: canje devuelve intento persistente, no orden confirmada");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",

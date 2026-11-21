@@ -2,7 +2,7 @@
 
 ## Alcance actual y dependencia
 
-**BKL-037 sigue abierta** (inicio y redirección a una pasarela). Por eso BKL-038 construye una **base demostrable de autenticidad y deduplicación** restringida al sandbox existente de BKL-035/BKL-036, no un webhook de un operador bancario. No existe cobro real, callback externo confiable ni cambio de estado a CONFIRMED. Esa integración requiere completar BKL-037 y los pasos verificados de BKL-040.
+**BKL-037 implementa un inicio y redirección al sandbox local.** Por eso BKL-038 construye una **base demostrable de autenticidad y deduplicación** restringida al sandbox existente de BKL-035/BKL-036, no un webhook de un operador bancario. No existe cobro real, callback externo confiable ni cambio de estado a CONFIRMED. Esa integración requiere completar BKL-037 y los pasos verificados de BKL-040.
 
 De manera predeterminada **no se registra el controller**: `techstore.payment.webhook.enabled=false`. Habilitarlo sin un secreto externo fuerte (32 bytes UTF-8 o más) provoca error de arranque, **no desactiva la comprobación**. No colocar secretos, firmas, cuerpos de peticiones ni datos de tarjeta en Git o registros.
 
