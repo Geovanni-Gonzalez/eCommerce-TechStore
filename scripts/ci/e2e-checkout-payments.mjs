@@ -72,7 +72,9 @@ async function createClient(ctx, suffix) {
   const created = await post(ctx, "/api/auth/register", {
     displayName: "Cliente E2E", email, password: PASSWORD,
   }, null, 201);
-  const logged = await post(ctx, "/api/auth/login", { email, password });
+  const logged = await post(ctx, "/api/auth/login", {
+    email, password: PASSWORD,
+  });
   assert.equal(logged.user.id, created.id);
   assert.equal(logged.user.role, "CLIENT");
   assert.equal(logged.tokenType, "Bearer");
