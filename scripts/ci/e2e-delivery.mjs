@@ -49,7 +49,7 @@ try {
 
   await page.getByRole("button",{name:"Guardar y revisar dirección"}).click();
   await page.getByRole("heading",{name:"Dirección preparada"}).waitFor();
-  await page.getByRole("status").getByText("Aún no se ha creado ningún pedido.",{exact:false}).waitFor();
+  assert.match(await page.getByRole("status").innerText(), /Aún no se ha creado ningún pedido/);
   await page.getByText("8888-1111").waitFor();
 
   await page.getByRole("link",{name:"Volver al carrito"}).click();
