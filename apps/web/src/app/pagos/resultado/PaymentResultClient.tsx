@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   classifyPaymentResult, isSafeApiOrigin, parseResultId,
@@ -58,7 +58,6 @@ const labels = {
 
 export default function PaymentResultClient() {
   const search = useSearchParams();
-  const router = useRouter();
   const orderId = parseResultId(search.get("orderId"));
   const attemptId = parseResultId(search.get("attemptId"));
 
@@ -90,11 +89,9 @@ export default function PaymentResultClient() {
       const actual = classifyPaymentResult(order, attempt, orderId, attemptId);
       setVerified(actual);
       setPhase("verified");
-      const query = "?orderId=" + orderId + "&attemptId=" + attemptId;
-      router.replace("/pagos/resultado/" + (
-        actual.kind === "approved" ? "aprobado"
-          : actual.kind === "rejected" ? "rechazado" : "pendiente"
-      ) + query, { scroll: false });
+      // No navegar al cambiar el resultado: Next.js desmontaría este
+      // componente y descartaría la sesión Bearer y el estado verificado.
+      // El path y query string NUNCA son evidencia de pago.
     } catch (failure: unknown) {
       setVerified(null);
       setMessage(failure instanceof Error ? failure.message : "Consulta no disponible.");

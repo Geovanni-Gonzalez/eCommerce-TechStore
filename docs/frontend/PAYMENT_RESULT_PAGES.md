@@ -11,7 +11,7 @@ TechStore es un prototipo académico. **No recibe dinero real**. Una URL de reto
 - `/pagos/resultado/rechazado?orderId=27&attemptId=98`
 - `/pagos/resultado/pendiente?orderId=27&attemptId=98`
 
-Los dos ID son **solo localizadores** (enteros positivos); no determinan resultado, importe, propietario ni autorización. El segmento `/aprobado`, aunque se escriba directamente, nunca muestra una aprobación sin consultar el backend. Una vez verificado el estado, el navegador reemplaza la ruta por la correspondiente a la evidencia consultada. Todas las páginas definen `robots: noindex` y `referrer: no-referrer`.
+Los dos ID son **solo localizadores** (enteros positivos); no determinan resultado, importe, propietario ni autorización. El segmento `/aprobado`, aunque se escriba directamente, nunca muestra una aprobación sin consultar el backend. Una vez verificado el estado, la página **mantiene el resultado visible sin navegar**, para no desmontar el componente React ni perder el token transitorio; esto fue validado con Chromium en BKL-044. Las rutas alternativas siguen disponibles para acceso directo, pero su segmento nunca determina el resultado. Todas las páginas definen `robots: noindex` y `referrer: no-referrer`.
 
 ## Autenticación transitoria
 
