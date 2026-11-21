@@ -60,6 +60,9 @@ jobs:
       - name: Probar catálogo y detalle BKL-019
         run: node --experimental-strip-types --test apps/web/src/lib/catalog.test.mjs
 
+      - name: Probar registro y roles BKL-017
+        run: node --experimental-strip-types --test apps/web/src/lib/auth.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
@@ -310,6 +313,7 @@ jobs:
           docker exec -i "$db_container" psql -U techstore -d techstore_test \
             -v ON_ERROR_STOP=1 < scripts/dev/seed-catalog.sql
           node scripts/ci/e2e-catalog.mjs
+          node scripts/ci/e2e-auth.mjs
           node scripts/ci/e2e-checkout-payments.mjs
 
       - name: Guardar capturas solo ante fallo E2E
