@@ -161,7 +161,8 @@ class SandboxCheckoutSessionIT {
                 "key-timed-out-001").response());
         jdbc.update("""
                 UPDATE sandbox_checkout_sessions
-                SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 minute'
+                SET created_at=CURRENT_TIMESTAMP-INTERVAL '20 minutes',
+                    expires_at=CURRENT_TIMESTAMP-INTERVAL '1 minute'
                 WHERE payment_attempt_id=(SELECT id FROM payment_attempts
                     WHERE order_id=?)
                 """, orderId);
