@@ -427,3 +427,8 @@ La ruta `/pagos/resultado` y las vistas `/aprobado`, `/rechazado`, `/pendiente` 
 ## BKL-043 — Mis pedidos: historial, detalle y estado visual
 
 La navegación **Mis pedidos** abre `/pedidos`, una interfaz privada ROLE_CLIENT con listado paginado por cursor (12 por página), estado `PENDING/CONFIRMED/CANCELLED`, detalle comercial histórico y línea temporal de BKL-042. El cliente consulta solo pedidos propios; la sesión puntual se mantiene en memoria (BKL-017 pendiente). `CONFIRMED` se identifica claramente como sandbox sin dinero bancario. [Guía BKL-043](docs/frontend/ORDER_HISTORY_UI.md).
+
+
+## BKL-044 — Pruebas E2E de checkout, pagos y pedidos
+
+CI ejecuta un recorrido **Chromium → Next.js → Spring Boot → PostgreSQL** en dos escenarios sandbox separados (**APPROVED** y **DECLINED**). Comprueba estado pendiente sin conciliación, aprobación simulada tras webhook HMAC verificado, rechazo, replays idempotentes, aislamiento entre cuentas, stock y timeline de pedidos. El carrito, cotización y creación del pedido se preparan por HTTP real porque el checkout visual sigue pendiente de otros issues. [Plan y matriz E2E](docs/qa/BKL-044_E2E_CHECKOUT_PAYMENTS.md).
