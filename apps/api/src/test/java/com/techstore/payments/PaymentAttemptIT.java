@@ -134,7 +134,7 @@ class PaymentAttemptIT {
     }
 
     @Test
-    void startedClaimNeverCallsGatewayOnReplay() {
+    void startedClaimNeverCallsGatewayOnReplay() throws Exception {
         String key = "attempt-started-001";
         String digest = java.util.HexFormat.of().withUpperCase().formatHex(
                 java.security.MessageDigest.getInstance("SHA-256")
@@ -193,8 +193,12 @@ class PaymentAttemptIT {
                 () -> defaultService.submit(userId + 9000, orderId, "attempt-same-user"));
         assertThrows(PaymentAttemptNotFoundException.class,
                 () -> defaultService.findForOwner(userId + 9000, orderId, 1));
+        assertTrue(carts.incrementProduct(userId, productId, 1));
+        Order secondOrder = checkout.confirm(userId, new ShippingAddress(
+                "San José", "Central", "Carmen",
+                "Casa frente al parque central", "Ana Pérez", "8888-1111"));
         assertThrows(PaymentAttemptConflictException.class,
-                () -> defaultService.submit(userId, orderId + 9000, "attempt-same-user"));
+                () -> defaultService.submit(userId, secondOrder.id(), "attempt-same-user"));
     }
 
     @Test
