@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 26, "Se esperan 26 operaciones de API");
+  assert.equal(operationCount, 27, "Se esperan 27 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -203,6 +203,23 @@ export function validateContract(doc) {
   assert.equal(completeSession.responses["200"]?.content?.["application/json"]?.schema?.$ref,
     "#/components/schemas/PaymentAttempt",
     "BKL-037: canje devuelve intento persistente, no orden confirmada");
+  const paymentReconciliation =
+    doc.paths["/api/admin/payment-events/{eventId}/reconcile"]?.post;
+  assert.equal(paymentReconciliation?.["x-implementation-status"], "implemented",
+    "BKL-040: la conciliación simulada ADMIN debe estar declarada");
+  assert.deepEqual(paymentReconciliation.security, [{ bearerAuth: [] }],
+    "BKL-040: reconciliación requiere Bearer ADMIN");
+  assert.equal(paymentReconciliation.requestBody, undefined,
+    "BKL-040: no admitir resultados, montos ni referencias fabricadas");
+  assert.equal(paymentReconciliation.parameters?.find(p =>
+    p.in === "path" && p.name === "eventId")?.required, true,
+    "BKL-040: el identificador de evento es obligatorio");
+  assert.equal(paymentReconciliation.responses["200"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/PaymentReconciliationResult",
+    "BKL-040: la conciliación devuelve evidencia, no recibo bancario");
+  assert.deepEqual(doc.components.schemas.PaymentReconciliationResult?.properties?.status?.enum,
+    ["RECEIVED", "CONFIRMED_SIMULATED", "DECLINED", "NEEDS_REVIEW"],
+    "BKL-040: distinguir estados de confirmación simulada y conciliación");
   assert.equal(doc.paths["/api/orders"].get["x-implementation-status"], "planned",
     "Historial de pedidos sigue pendiente");
   assert.equal(doc.paths["/api/orders/{id}"].get["x-implementation-status"], "planned",

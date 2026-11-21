@@ -402,3 +402,8 @@ La API incorpora `POST /api/orders/{orderId}/payment-attempts` (Bearer CLIENT, `
 ## BKL-037 — Inicio seguro y redirección al sandbox
 
 **Flyway V13** agrega sesiones de checkout con tokens aleatorios de 256 bits (solo hash en PostgreSQL), vigencia máxima de 10 minutos y canje de un solo uso. Un **CLIENT autenticado** inicia `POST /api/orders/{orderId}/payment-sessions` con `Idempotency-Key` y sin body: el servidor valida propiedad, estado de reserva, monto histórico y moneda CRC, y produce una URL fija de `/pagos/sandbox#session=...`. La página local previsualiza el monto y simula una autorización; no procesa dinero ni confirma pedidos. Todo está **deshabilitado por defecto** y requiere `TECHSTORE_PAYMENT_PROVIDER=SANDBOX` + `TECHSTORE_PAYMENT_SANDBOX_ENABLED=true`. [Guía completa BKL-037](docs/backend/SECURE_PAYMENT_REDIRECT.md).
+
+
+## BKL-040 — Confirmación y consumo atómico (solo sandbox opt-in)
+
+Flyway **V14** registra el estado de conciliación de webhooks y el motivo de transición `SANDBOX_VERIFIED`. Con `TECHSTORE_PAYMENT_SANDBOX_AUTO_CONFIRM=true` **solo en pruebas**, un evento SANDBOX firmado, aprobado y coincidente con el intento/pedido permite pasar atómicamente el pedido a `CONFIRMED`, reservas a `CONSUMED` e historial, sin restar stock de nuevo. Por defecto no confirma pedidos. Los eventos declinados/tardíos quedan `DECLINED` o `NEEDS_REVIEW`, y fallos de transacción conservan `RECEIVED` para retry ADMIN. **No son cobros bancarios.** [Diseño y controles BKL-040](docs/backend/ATOMIC_PAYMENT_CONFIRMATION.md).

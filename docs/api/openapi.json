@@ -1926,6 +1926,86 @@
         "security": [],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/admin/payment-events/{eventId}/reconcile": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "reconcileVerifiedSandboxPaymentEvent",
+        "summary": "Reintentar conciliación atómica de un evento sandbox previamente verificado",
+        "description": "Solo ADMIN. No se admite body ni resultado o importe manual. El endpoint está deshabilitado por defecto y se habilita SOLO en entorno aislado con SANDBOX, webhook HMAC y auto-confirm-verified-events=true. Serializa sobre orders, verifica evento APPROVED firmado y persistido, intento SIMULATED_APPROVED, CRC y reservas exactas vigentes. En una transacción cambia todas las reservas RESERVED→CONSUMED, orders PENDING→CONFIRMED (payment_mode SIMULATED), historial SYSTEM/SANDBOX_VERIFIED y estado del evento CONFIRMED_SIMULATED. DECLINED/NEEDS_REVIEW no confirman. Replay es idempotente. Esta es solo una confirmación de demostración, NO un pago bancario. Cuando hay fallo SQL la transacción revierte y el evento permanece RECEIVED para conciliación.",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado persistido de conciliación simulada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentReconciliationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No se admite body ni cambios manuales de resultado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación Bearer requerida",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rol ADMIN requerido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evento firmado inexistente",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -2986,6 +3066,35 @@
             "maxLength": 43,
             "pattern": "^[A-Za-z0-9_-]{43}$",
             "description": "Token aleatorio de 256 bits emitido en fragmento, no tarjeta ni credencial de cuenta"
+          }
+        }
+      },
+      "PaymentReconciliationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Resultado de conciliación de la notificación SANDBOX. CONFIRMED_SIMULATED no acredita fondos bancarios y solo existe bajo opt-in.",
+        "required": [
+          "eventId",
+          "orderId",
+          "status"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "CONFIRMED_SIMULATED",
+              "DECLINED",
+              "NEEDS_REVIEW"
+            ]
           }
         }
       }

@@ -78,3 +78,8 @@ Ante dos POST idénticos, se observa **una sola fila** de auditoría y ningún c
 - CI `mvn -f apps/api/pom.xml clean verify`, OpenAPI de 23 operaciones, frontend y pruebas de smoke.
 
 **No usar las notificaciones de sandbox como recibos bancarios.** En un proveedor real habrá que implementar su propio mecanismo documentado de firma/validación, claves con rotación y política de conciliación antes de confirmaciones. La idempotencia de webhooks no sustituye la idempotencia financiera de BKL-036.
+
+
+## Conciliación de eventos firmados (BKL-040)
+
+Un evento sandbox firmado y persistido puede ser conciliado en modo demostración **opt-in**. El resultado `CONFIRMED_SIMULATED` se registra separadamente de la recepción, y todos los movimientos de pedido/reservas/historial son atómicos. El sistema permanece en modo **no confirmar** por defecto. [ATOMIC_PAYMENT_CONFIRMATION.md](ATOMIC_PAYMENT_CONFIRMATION.md).
