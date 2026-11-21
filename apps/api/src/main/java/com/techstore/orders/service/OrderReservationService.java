@@ -65,7 +65,7 @@ public class OrderReservationService {
 
     /**
      * Única transición administrativa habilitada: PENDING -> CANCELLED.
-     * BKL-040 reservará CONFIRMED para pago aprobado.
+     * BKL-040 habilita CONFIRMED solo con prueba de sandbox verificada y opt-in.
      */
     @Transactional
     public void cancelAsAdmin(long actorId, long orderId) {

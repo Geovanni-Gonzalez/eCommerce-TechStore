@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * BKL-045: ADMIN cancela PENDING y consulta trazabilidad de transiciones.
- * No habilita CONFIRMED sin prueba de pago (BKL-040).
+ * CONFIRMED solo procede del conciliador BKL-040, no de esta ruta ADMIN.
  */
 @RestController
 @RequestMapping("/api/admin/orders")
