@@ -77,8 +77,9 @@ jobs:
           # deben renderizar solo el formulario hasta consultar el backend.
           for path in /pagos/resultado /pagos/resultado/aprobado /pagos/resultado/rechazado /pagos/resultado/pendiente; do
             html="$(curl --fail --silent --show-error "http://127.0.0.1:3000${path}?orderId=1&attemptId=1")"
-            echo "$html" | grep -q "Estado de tu simulación"
-            if echo "$html" | grep -q "El backend confirmó este pedido"; then
+            # En rutas estáticas Suspense puede entregar primero su fallback,
+            # antes de hidratar el formulario CLIENT: no exigir su título en SSR.
+            if [[ "$html" == *"El backend confirmó este pedido"* ]]; then
               echo "ERROR: resultado aprobado por URL sin autenticación"
               exit 1
             fi
