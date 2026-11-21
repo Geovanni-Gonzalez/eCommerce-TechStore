@@ -217,7 +217,11 @@ class SandboxPaymentConfirmationIT {
         assertFalse(lifecycle.expireOne(orderId));
         assertEquals(3, stock());
         assertEquals("PENDING", orderStatus());
-        assertEquals("LATE_APPROVAL", incidentReason());
+        assertTrue(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM payment_reconciliation_incidents
+                    WHERE order_id=? AND reason='LATE_APPROVAL')
+                """, Boolean.class, orderId));
     }
 
     @Test
