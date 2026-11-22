@@ -69,6 +69,9 @@ jobs:
       - name: Probar validación de dirección de entrega BKL-031
         run: node --experimental-strip-types --test apps/web/src/lib/shipping-address.test.mjs
 
+      - name: Probar cotización y checkout visual BKL-034
+        run: node --experimental-strip-types --test apps/web/src/lib/checkout-ui.test.mjs
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
@@ -109,7 +112,7 @@ jobs:
             exit 1
           fi
           echo "HTTP 200: /pedidos (sin datos de cliente)"
-          for path in / /productos /carrito /login; do
+          for path in / /productos /carrito /login /checkout/entrega /checkout/revision; do
             curl --fail --silent --show-error "http://127.0.0.1:3000${path}" -o /dev/null
             echo "HTTP 200: ${path}"
           done
@@ -322,6 +325,7 @@ jobs:
           node scripts/ci/e2e-auth.mjs
           node scripts/ci/e2e-cart.mjs
           node scripts/ci/e2e-delivery.mjs
+          node scripts/ci/e2e-checkout-visual.mjs
           node scripts/ci/e2e-checkout-payments.mjs
 
       - name: Guardar capturas solo ante fallo E2E
