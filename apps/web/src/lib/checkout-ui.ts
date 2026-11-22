@@ -65,7 +65,7 @@ export function parseCheckoutTotals(input: unknown): CheckoutTotals {
 
 export function parseCheckoutQuote(input: unknown, cart: Cart): CheckoutQuote {
   const data = object(input);
-  if (!data || !positive(data.totalItems) || !data.estimateOnly
+  if (!data || !positive(data.totalItems) || data.estimateOnly !== true
       || !["FIXED","FREE_OVER_THRESHOLD"].includes(String(data.shippingPolicy))
       || data.totalItems !== cart.totalItems || !cart.checkoutReady) {
     throw new Error("La cotización no corresponde al carrito disponible.");

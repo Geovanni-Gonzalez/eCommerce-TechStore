@@ -92,6 +92,9 @@ function DeliveryEditor({
             ))}
           </dl>
           <div className="delivery-actions">
+            <Link className="delivery-primary" href="/checkout/revision">
+              Continuar a revisión del pedido
+            </Link>
             <button type="button" className="delivery-secondary" onClick={() => {
               setReview(false);
               setMessage("");
@@ -101,8 +104,8 @@ function DeliveryEditor({
             </button>
           </div>
           <p className="delivery-note">
-            La revisión del pedido, el total definitivo y su confirmación
-            se incorporarán en BKL-034. Esta pantalla no realiza pagos ni pedidos.
+            En el siguiente paso verás el total estimado de la API y
+            podrás confirmar el pedido. Esta pantalla aún no genera pedidos ni pagos.
           </p>
           <Link href="/carrito">Volver al carrito</Link>
         </div>

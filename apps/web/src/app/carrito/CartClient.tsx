@@ -242,8 +242,8 @@ export default function CartClient() {
                   </Link>
                 )}
                 <p className="cart-muted">La dirección se revisa en BKL-031;
-                  la confirmación del pedido y el pago visual pertenecerán a BKL-034.
-                  Aquí no se cobra dinero.</p>
+                  el resumen, la confirmación y el pago sandbox se realizan
+                  desde el checkout visual. Aquí no se cobra dinero.</p>
                 <Link href="/productos" className="cart-secondary cart-summary__link">
                   Seguir comprando
                 </Link>
