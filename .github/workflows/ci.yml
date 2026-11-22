@@ -327,6 +327,9 @@ jobs:
           node scripts/ci/e2e-delivery.mjs
           node scripts/ci/e2e-checkout-visual.mjs
           node scripts/ci/e2e-checkout-payments.mjs
+          # BKL-058: repetir en viewport 390px, con navegación y datos reales.
+          E2E_VIEWPORT=mobile node scripts/ci/e2e-checkout-visual.mjs
+          E2E_VIEWPORT=mobile node scripts/ci/e2e-checkout-payments.mjs
 
       - name: Guardar capturas solo ante fallo E2E
         if: failure()
