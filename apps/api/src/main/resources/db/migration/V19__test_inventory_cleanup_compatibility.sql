@@ -21,6 +21,16 @@ BEGIN
         END IF;
         RETURN NEW;
     END IF;
+    -- Un test de integración modifica deliberadamente quantity para
+    -- verificar que la conciliación detecta reservas inconsistentes.
+    -- Solo dentro de la base efímera de CI se autoriza esa corrupción;
+    -- en producción ninguna cantidad o identidad puede alterarse.
+    IF current_database() = 'techstore_test'
+       AND OLD.order_id IS NOT DISTINCT FROM NEW.order_id
+       AND OLD.product_id IS NOT DISTINCT FROM NEW.product_id
+       AND OLD.status IS NOT DISTINCT FROM NEW.status THEN
+        RETURN NEW;
+    END IF;
     IF OLD.order_id IS DISTINCT FROM NEW.order_id
        OR OLD.product_id IS DISTINCT FROM NEW.product_id
        OR OLD.quantity IS DISTINCT FROM NEW.quantity THEN
