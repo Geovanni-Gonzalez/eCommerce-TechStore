@@ -370,7 +370,7 @@ export default function OrdersClient() {
         !window.matchMedia("(max-width: 860px)").matches) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     detailSectionRef.current?.scrollIntoView({
-      behavior: reduceMotion ? "instant" : "smooth", block: "start",
+      behavior: reduceMotion ? "auto" : "smooth", block: "start",
     });
   }, [detail, detailBusy]);
 
@@ -525,9 +525,17 @@ export default function OrdersClient() {
                     aria-describedby="orders-search-hint" />
                   <p id="orders-search-hint">Busca únicamente entre los pedidos cargados.</p>
                 </div>
-                <p className="orders-filter-result" role="status" aria-live="polite">
-                  {filteredOrders.length} de {counts.loaded} pedidos cargados visibles
-                </p>
+                <div className="orders-filter-footer">
+                  <p className="orders-filter-result" role="status" aria-live="polite">
+                    {filteredOrders.length} de {counts.loaded} pedidos cargados visibles
+                  </p>
+                  {hasActiveFilter && (
+                    <button type="button" className="orders-filter-clear"
+                      onClick={() => {setStatusFilter("ALL");setOrderSearch("");}}>
+                      Limpiar filtros
+                    </button>
+                  )}
+                </div>
               </div>
               {listError && <p role="alert" className="orders-error">{listError}</p>}
               {listBusy && <p role="status">Cargando pedidos…</p>}
