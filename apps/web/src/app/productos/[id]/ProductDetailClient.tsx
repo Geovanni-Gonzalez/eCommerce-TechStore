@@ -8,6 +8,7 @@ import {
 } from "@/lib/catalog";
 import ProductPhoto from "../ProductPhoto";
 import AddToCartButton from "@/components/AddToCartButton";
+import ProductReviews from "./ProductReviews";
 
 type Result = {
   forId: number;
@@ -96,6 +97,8 @@ export default function ProductDetailClient({ idParam }: { idParam: string }) {
           </div>
         </article>
       )}
+      {current?.product && <ProductReviews key={id} productId={current.product.id} />}
+
     </section>
   );
 }
