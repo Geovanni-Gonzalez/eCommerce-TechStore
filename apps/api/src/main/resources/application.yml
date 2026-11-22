@@ -26,6 +26,11 @@ techstore:
     # BKL-027: TTL 30 min en V9; conciliar cada 60 segundos.
     reservation-expiry-enabled: ${CHECKOUT_RESERVATION_EXPIRY_ENABLED:true}
     reservation-expiry-scan-ms: ${CHECKOUT_RESERVATION_EXPIRY_SCAN_MS:60000}
+  shipping:
+    # BKL-047: DISABLED por defecto, no se simulan entregas reales.
+    # MANUAL permite únicamente crear una tarea logística ADMIN (PENDING_MANUAL).
+    # No hay integración externa ni números de guía inventados.
+    provider: ${TECHSTORE_SHIPPING_PROVIDER:DISABLED}
   payment:
     # DISABLED por defecto. SANDBOX sin red requiere opt-in explícito.
     provider: ${TECHSTORE_PAYMENT_PROVIDER:DISABLED}
