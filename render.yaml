@@ -9,7 +9,7 @@ services:
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: ./apps/api
     healthCheckPath: /actuator/health
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: off
     envVars:
       - key: DB_HOST
         fromDatabase:
