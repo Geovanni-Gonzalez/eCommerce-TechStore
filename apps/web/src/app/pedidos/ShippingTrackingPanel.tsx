@@ -9,13 +9,18 @@ import {formatOrderDate} from "@/lib/order-history";
 
 /** Solo usa el token en memoria de la vista Mis pedidos. */
 export default function ShippingTrackingPanel({
-  token,orderId,
-}:{token:string;orderId:number}) {
+  getToken,orderId,
+}:{getToken:()=>string|null;orderId:number}) {
   const [reload,setReload]=useState(0);
   const [result,setResult]=useState<ShippingTracking|null>(null);
   const [error,setError]=useState("");
   useEffect(()=>{
     const controller=new AbortController();
+    const token=getToken();
+    if(!token) {
+      setError("Sesión no disponible para consultar el seguimiento.");
+      return ()=>controller.abort();
+    }
     void getCustomerShippingTracking(token,orderId,controller.signal).then(data=>{
       if(!controller.signal.aborted)setResult(data);
     }).catch((cause:unknown)=>{
@@ -23,7 +28,7 @@ export default function ShippingTrackingPanel({
         "No se pudo consultar el seguimiento.");
     });
     return ()=>controller.abort();
-  },[token,orderId,reload]);
+  },[getToken,orderId,reload]);
 
   return <section className="orders-shipping" aria-label="Seguimiento de envío">
     <h3>Seguimiento de entrega</h3>
