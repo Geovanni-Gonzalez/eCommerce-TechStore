@@ -4,6 +4,7 @@
  */
 import {isSafeApiOrigin} from "./payment-result";
 import type {ShippingAddress} from "./shipping-address";
+import type {ShipmentHistoryStatus} from "./shipping-tracking";
 
 const BASE=(process.env.NEXT_PUBLIC_API_URL??"http://localhost:8080").replace(/\/$/,"");
 const integer=(v:unknown):v is number=>typeof v==="number"&&Number.isSafeInteger(v);
@@ -24,6 +25,7 @@ function failureMessage(status:number):string {
     case 403:return "La API rechazó el permiso ADMIN.";
     case 404:return "El pedido o producto ya no existe.";
     case 409:return "El estado o stock cambió, o el identificador ya se usó. Actualiza la información.";
+    case 503:return "El registro logístico manual no está habilitado en la API.";
     default:return "No se pudo confirmar la operación. Consulta el historial antes de repetirla.";
   }
 }
@@ -241,4 +243,66 @@ export async function adminAdjustInventory(token:string,productId:number,
       ||a.requestId!==payload.requestId||a.movement.kind!==payload.kind
       ||a.movement.quantity!==payload.quantity)throw new Error("Ajuste devuelto inconsistente.");
   return {balance:b,audit:a,replayed:r.replayed};
+}
+
+/* BKL-048: manejo ADMIN del contrato logístico manual, sin PII ni credenciales. */
+export type AdminShipment={
+  id:number;orderId:number;fulfillmentMethod:"MANUAL";
+  status:ShipmentHistoryStatus;openedByUserId:number;registeredAt:string;
+};
+export type AdminShipmentHistory={
+  id:number;shipmentId:number;fromStatus:ShipmentHistoryStatus|null;
+  toStatus:ShipmentHistoryStatus;actorUserId:number;
+  reason:"MANUAL_REGISTERED"|"MANUAL_DISPATCH"|"MANUAL_DELIVERY";changedAt:string;
+};
+function shipmentStatus(s:unknown):s is ShipmentHistoryStatus {
+  return s==="PENDING_MANUAL"||s==="IN_TRANSIT"||s==="DELIVERED";
+}
+function shipment(raw:unknown,orderId:number):AdminShipment {
+  const s=object(raw);
+  if(!positive(s.id)||s.orderId!==orderId||s.fulfillmentMethod!=="MANUAL"
+      ||!shipmentStatus(s.status)||!positive(s.openedByUserId)
+      ||typeof s.registeredAt!=="string"||!Number.isFinite(Date.parse(s.registeredAt)))
+    throw new Error("Registro logístico administrativo inválido.");
+  return {id:s.id,orderId,fulfillmentMethod:"MANUAL",status:s.status,
+    openedByUserId:s.openedByUserId,registeredAt:s.registeredAt};
+}
+export async function adminGetShipment(token:string,orderId:number,signal?:AbortSignal) {
+  if(!positive(orderId))throw new Error("Pedido inválido.");
+  try {
+    return shipment(await call(token,"GET",
+      "/api/admin/shipments/orders/"+orderId,{signal}),orderId);
+  } catch(error) {
+    if(error instanceof AdminOperationError&&error.status===404)return null;
+    throw error;
+  }
+}
+export async function adminShipmentHistory(token:string,orderId:number,signal?:AbortSignal) {
+  const value=await call(token,"GET",
+    "/api/admin/shipments/orders/"+orderId+"/history",{signal});
+  if(!Array.isArray(value))throw new Error("Historial logístico inválido.");
+  return value.map((v:unknown)=>{
+    const h=object(v);
+    if(!positive(h.id)||!positive(h.shipmentId)
+      ||(h.fromStatus!==null&&!shipmentStatus(h.fromStatus))
+      ||!shipmentStatus(h.toStatus)||!positive(h.actorUserId)
+      ||!["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY"].includes(String(h.reason))
+      ||typeof h.changedAt!=="string"||!Number.isFinite(Date.parse(h.changedAt)))
+      throw new Error("Hito logístico inválido.");
+    return {id:h.id,shipmentId:h.shipmentId,
+      fromStatus:h.fromStatus as ShipmentHistoryStatus|null,toStatus:h.toStatus,
+      actorUserId:h.actorUserId,reason:h.reason as AdminShipmentHistory["reason"],
+      changedAt:h.changedAt} satisfies AdminShipmentHistory;
+  }) as AdminShipmentHistory[];
+}
+export async function adminRegisterShipment(token:string,orderId:number) {
+  if(!positive(orderId))throw new Error("Pedido inválido.");
+  return shipment(await call(token,"POST","/api/admin/shipments/orders/"+orderId),orderId);
+}
+export async function adminAdvanceShipment(token:string,orderId:number,
+  target:"IN_TRANSIT"|"DELIVERED") {
+  if(!positive(orderId)||!["IN_TRANSIT","DELIVERED"].includes(target))
+    throw new Error("Transición logística inválida.");
+  return shipment(await call(token,"PATCH",
+    "/api/admin/shipments/orders/"+orderId+"/status",{body:{status:target}}),orderId);
 }
