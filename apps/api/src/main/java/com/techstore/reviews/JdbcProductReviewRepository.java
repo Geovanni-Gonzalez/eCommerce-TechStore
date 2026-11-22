@@ -61,6 +61,19 @@ public class JdbcProductReviewRepository {
                 userId,productId).stream().findFirst();
     }
 
+    /** Máximo 50 reseñas recientes; solo columnas públicas y filas activas. */
+    public List<PublicProductReview> findPublic(long productId) {
+        return jdbc.query("""
+                SELECT rating, comment, created_at
+                FROM product_reviews
+                WHERE product_id=? AND active
+                ORDER BY created_at DESC, id DESC
+                LIMIT 50
+                """, (rs, row) -> new PublicProductReview(
+                    rs.getInt("rating"), rs.getString("comment"),
+                    rs.getObject("created_at", OffsetDateTime.class)), productId);
+    }
+
     public ProductReview insert(long userId,long productId,ReviewInput input) {
         List<ProductReview> rows = jdbc.query("""
                 INSERT INTO product_reviews (user_id,product_id,rating,comment)

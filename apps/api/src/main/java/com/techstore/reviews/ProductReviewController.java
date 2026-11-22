@@ -3,6 +3,7 @@ package com.techstore.reviews;
 import com.techstore.users.security.SessionPrincipal;
 import java.net.URI;
 import java.util.Map;
+import java.util.List;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,12 @@ public class ProductReviewController {
 
     public ProductReviewController(ProductReviewService service) {
         this.service = service;
+    }
+
+    /** Consulta pública: no incluye identidad ni información de pedidos. */
+    @GetMapping(value="/{productId}", produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PublicProductReview>> list(@PathVariable long productId) {
+        return ResponseEntity.ok().body(service.listPublic(productId));
     }
 
     @GetMapping(value="/{productId}/eligibility",

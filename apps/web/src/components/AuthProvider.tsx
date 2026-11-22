@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { parseAuthSession, type AuthSession, type AuthUser, type UserRole } from "@/lib/auth";
 import { publicAuthPost, revokeAuthToken } from "@/lib/auth-client";
 import type { ShippingAddress } from "@/lib/shipping-address";
@@ -51,7 +51,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     setUser(null);
     if (token) await revokeAuthToken(token);
   }
-  const getToken = (): string | null => session.current?.accessToken ?? null;
+  const getToken = useCallback((): string | null => session.current?.accessToken ?? null, []);
   function saveDeliveryDraft(value: ShippingAddress) {
     if (session.current?.user.role !== "CLIENT") {
       throw new Error("La dirección requiere una sesión CLIENT.");

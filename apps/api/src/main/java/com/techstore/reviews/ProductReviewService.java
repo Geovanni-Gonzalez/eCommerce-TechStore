@@ -1,6 +1,7 @@
 package com.techstore.reviews;
 
 import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,13 @@ public class ProductReviewService {
 
     public ProductReviewService(JdbcProductReviewRepository repository) {
         this.repository = Objects.requireNonNull(repository);
+    }
+
+    @Transactional(readOnly=true)
+    public List<PublicProductReview> listPublic(long productId) {
+        if (productId < 1 || !repository.productExists(productId))
+            throw new ReviewProductNotFoundException();
+        return repository.findPublic(productId);
     }
 
     @Transactional(readOnly=true)
