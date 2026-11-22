@@ -12,6 +12,7 @@ export type CatalogProduct = {
   stock: number;
   active: true;
   category: ProductCategory | null;
+  brand: string | null;
   imageUrl: string | null;
 };
 export type CatalogPage = {
@@ -71,6 +72,8 @@ export function parseProduct(value: unknown, expectedId?: number): CatalogProduc
     priceCrc: p.priceCrc, stock: p.stock, active: true,
     category: rawCategory
       ? { id: rawCategory.id as number, name: rawCategory.name as string } : null,
+    brand: p.brand == null ? null : (typeof p.brand === "string"
+      && p.brand.trim().length > 0 ? p.brand.trim() : null),
     imageUrl: safeImageUrl(p.imageUrl),
   };
 }

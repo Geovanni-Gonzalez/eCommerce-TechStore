@@ -5,7 +5,7 @@ import "./catalog.css";
 
 export const metadata: Metadata = {
   title: "Productos | TechStore",
-  description: "Explora accesorios tecnológicos con precios y existencias consultados en la API pública.",
+  description: "Busca accesorios por nombre o palabra clave y combina filtros de categoría, marca y precio en colones.",
 };
 
 export default function ProductosPage() {

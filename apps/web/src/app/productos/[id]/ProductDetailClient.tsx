@@ -78,6 +78,7 @@ export default function ProductDetailClient({ idParam }: { idParam: string }) {
             <p className="eyebrow">{current.product.category?.name ?? "Accesorio tecnológico"}</p>
             <h1 id="product-title">{current.product.name}</h1>
             <p className="catalog-product__sku">Referencia: {current.product.sku}</p>
+            {current.product.brand && <p>Marca: <strong>{current.product.brand}</strong></p>}
             <p className="catalog-product__price">{formatCatalogCrc(current.product.priceCrc)}</p>
             <p className={current.product.stock > 0
               ? "catalog-stock catalog-stock--available" : "catalog-stock catalog-stock--none"}>
@@ -89,9 +90,8 @@ export default function ProductDetailClient({ idParam }: { idParam: string }) {
             <p>{current.product.description?.trim() || "Este producto no tiene descripción publicada."}</p>
             <AddToCartButton productId={current.product.id}
               name={current.product.name} stock={current.product.stock} />
-            <p className="catalog-product__note">El carrito ya permite guardar productos.
-              El formulario de entrega y checkout visual estarán disponibles
-              en BKL-031 y BKL-034.</p>
+            <p className="catalog-product__note">Puedes añadir productos al carrito
+              y continuar a dirección, revisión y pago de demostración.</p>
             <Link className="catalog-detail-link" href="/productos">← Volver al catálogo</Link>
           </div>
         </article>
