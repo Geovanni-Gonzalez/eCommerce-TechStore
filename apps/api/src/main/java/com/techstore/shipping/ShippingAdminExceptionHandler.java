@@ -7,7 +7,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -23,7 +22,7 @@ public class ShippingAdminExceptionHandler {
             HttpMessageNotReadableException.class})
     ResponseEntity<ProblemDetail> invalid() {
         return problem(HttpStatus.BAD_REQUEST,"INVALID_SHIPMENT_REQUEST",
-                "El identificador del pedido debe ser positivo");
+                "Solicitud logística malformada o identificador inválido");
     }
 
     @ExceptionHandler(ShippingNotFoundException.class)
