@@ -2,7 +2,7 @@
  * BKL-020/021/022 — filtros públicos sincronizados con URL.
  * Solo se permiten claves y cantidades respaldadas por contrato API.
  */
-import {parseCatalogPageQuery,parseProductId} from "./catalog";
+import {CATALOG_SIZE,parseCatalogPageQuery,parseProductId} from "./catalog";
 
 export type CatalogFilters = {
   page:number;
@@ -62,7 +62,7 @@ export function buildCatalogHref(filters:CatalogFilters):string {
 export function buildCatalogApiPath(filters:CatalogFilters):`/${string}` {
   const params=toParams(filters);
   params.set("page",String(filters.page));
-  params.set("size","12");
+  params.set("size",String(CATALOG_SIZE));
   return `/api/products?${params.toString()}`;
 }
 export function parseFilterOptions(value:unknown):CatalogFilterOptions {

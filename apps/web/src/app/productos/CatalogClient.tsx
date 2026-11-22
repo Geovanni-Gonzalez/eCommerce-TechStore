@@ -5,7 +5,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState, type FormEvent} from "react";
 import {apiGet} from "@/lib/api";
 import {
-  CATALOG_SIZE, type CatalogPage, formatCatalogCrc, parseCatalogPage,
+  type CatalogPage, formatCatalogCrc, parseCatalogPage,
 } from "@/lib/catalog";
 import {
   buildCatalogApiPath, buildCatalogHref, parseCatalogFilters,
