@@ -47,6 +47,10 @@
     {
       "name": "Shipping",
       "description": "Registro logístico manual ADMIN. No equivale a despacho/entrega real."
+    },
+    {
+      "name": "Reviews",
+      "description": "BKL-050: elegibilidad de reseña por compra entregada MANUAL; interfaz y listados públicos llegarán en BKL-051."
     }
   ],
   "paths": {
@@ -4037,6 +4041,266 @@
           }
         }
       }
+    },
+    "/api/reviews/products/{productId}/eligibility": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "getMyReviewEligibility",
+        "summary": "Consultar elegibilidad de reseña del cliente autenticado",
+        "description": "Solo ROLE_CLIENT. Compra histórica CONFIRMED, línea del producto y envío MANUAL DELIVERED con evento MANUAL_DELIVERY. SIMULATOR excluido. Devuelve razón acotada, sin PII ni orderId.",
+        "responses": {
+          "200": {
+            "description": "Elegibilidad calculada para el usuario autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewEligibility"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/products/{productId}/mine": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "getMyActiveProductReview",
+        "summary": "Consultar la única reseña activa propia de un producto",
+        "description": "Solo ROLE_CLIENT; WHERE user_id derivado del Bearer. 404 si no hay reseña propia.",
+        "responses": {
+          "200": {
+            "description": "Reseña activa propia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/products/{productId}": {
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "createMyVerifiedProductReview",
+        "summary": "Crear reseña única por producto y CLIENT con entrega manual acreditada",
+        "description": "BKL-050: requiriere pedido CONFIRMED propio, order_items.product_id y shipments MANUAL DELIVERED con auditoría MANUAL_DELIVERY. Nunca SIMULATOR. Índice UNIQUE parcial en PostgreSQL evita reseñas activas duplicadas incluso concurrentes. No expone pedido ni propiedad en JSON. BKL-051 añadirá formulario/vista pública.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reseña creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5995,6 +6259,97 @@
               "IN_TRANSIT",
               "DELIVERED"
             ]
+          }
+        }
+      },
+      "ReviewEligibility": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productId",
+          "eligible",
+          "hasActiveReview",
+          "reason"
+        ],
+        "description": "No incluye órdenes, actor ADMIN ni identidad del usuario. SIMULATOR DELIVERED no habilita reseñas.",
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "hasActiveReview": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "ELIGIBLE",
+              "NOT_DELIVERED",
+              "ALREADY_REVIEWED"
+            ]
+          }
+        }
+      },
+      "ProductReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Reseña propia; no expone correo, usuario ni pedido histórico.",
+        "required": [
+          "id",
+          "productId",
+          "rating",
+          "comment",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateProductReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "El cliente NO puede suministrar userId, orderId ni active.",
+        "required": [
+          "rating",
+          "comment"
+        ],
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000
           }
         }
       }
