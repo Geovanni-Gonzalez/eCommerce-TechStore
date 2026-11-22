@@ -124,7 +124,9 @@ async function run() {
     timeout: 15000, extraHTTPHeaders: { Accept: "application/json" },
   });
   const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 850 } });
+  const viewport = process.env.E2E_VIEWPORT==="mobile"
+    ? {width:390,height:844} : {width:1280,height:850};
+  const page = await browser.newPage({ viewport });
   let orderId = null;
   try {
     const owner = await createClient(ctx, "owner");
