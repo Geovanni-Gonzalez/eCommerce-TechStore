@@ -1,0 +1,54 @@
+# TechStore academic demo stack. Review Render's free-plan limitations before applying.
+# This file is deployed from the feature branch until reviewed and merged into dev.
+services:
+  - type: web
+    name: techstore-api-demo
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: techstore-postgres-demo
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: techstore-postgres-demo
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: techstore-postgres-demo
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: techstore-postgres-demo
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: techstore-postgres-demo
+          property: password
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://techstore-ecommerce-lime.vercel.app
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=20
+      - key: TECHSTORE_PAYMENT_PROVIDER
+        value: DISABLED
+      - key: TECHSTORE_PAYMENT_SANDBOX_ENABLED
+        value: 'false'
+      - key: TECHSTORE_PAYMENT_WEBHOOK_ENABLED
+        value: 'false'
+      - key: TECHSTORE_SHIPPING_PROVIDER
+        value: DISABLED
+
+databases:
+  - name: techstore-postgres-demo
+    plan: free
+    region: virginia
+    postgresMajorVersion: '17'
+    databaseName: techstore_demo
+    user: techstore_app
+    ipAllowList: []
