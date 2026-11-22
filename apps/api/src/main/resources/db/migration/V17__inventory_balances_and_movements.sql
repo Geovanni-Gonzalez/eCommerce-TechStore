@@ -136,6 +136,42 @@ AFTER UPDATE OF status ON stock_reservations
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION inventory_audit_reservation();
 
+-- Las cantidades y claves de una reserva no pueden cambiar después
+-- de su creación, y una reserva terminal nunca vuelve a RESERVED.
+-- Sin este guard sería posible alterar el saldo sin dejar un evento.
+CREATE FUNCTION inventory_guard_reservation_mutation() RETURNS TRIGGER
+LANGUAGE plpgsql AS $
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'No se pueden eliminar reservas históricas'
+            USING ERRCODE = '23514';
+    END IF;
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.status <> 'RESERVED' THEN
+            RAISE EXCEPTION 'Una reserva nueva debe comenzar RESERVED'
+                USING ERRCODE = '23514';
+        END IF;
+        RETURN NEW;
+    END IF;
+    IF OLD.order_id IS DISTINCT FROM NEW.order_id
+       OR OLD.product_id IS DISTINCT FROM NEW.product_id
+       OR OLD.quantity IS DISTINCT FROM NEW.quantity THEN
+        RAISE EXCEPTION 'La identidad y cantidad de la reserva son inmutables'
+            USING ERRCODE = '23514';
+    END IF;
+    IF OLD.status IS DISTINCT FROM NEW.status
+       AND NOT (OLD.status = 'RESERVED'
+            AND NEW.status IN ('RELEASED', 'CONSUMED')) THEN
+        RAISE EXCEPTION 'Transición de reserva no permitida'
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$;
+CREATE TRIGGER trg_inventory_reservation_integrity
+BEFORE INSERT OR UPDATE OR DELETE ON stock_reservations
+FOR EACH ROW EXECUTE FUNCTION inventory_guard_reservation_mutation();
+
 -- La bitácora de movimientos no puede reescribirse ni borrarse.
 CREATE FUNCTION inventory_reject_history_mutation() RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
