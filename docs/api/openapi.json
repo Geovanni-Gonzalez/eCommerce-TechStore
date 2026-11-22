@@ -50,7 +50,7 @@
     },
     {
       "name": "Reviews",
-      "description": "BKL-050: elegibilidad de reseña por compra entregada MANUAL; interfaz y listados públicos llegarán en BKL-051."
+      "description": "BKL-050/051: elegibilidad, creación privada y consulta pública sin PII."
     }
   ],
   "paths": {
@@ -4227,7 +4227,7 @@
         "x-implementation-status": "implemented",
         "operationId": "createMyVerifiedProductReview",
         "summary": "Crear reseña única por producto y CLIENT con entrega manual acreditada",
-        "description": "BKL-050: requiriere pedido CONFIRMED propio, order_items.product_id y shipments MANUAL DELIVERED con auditoría MANUAL_DELIVERY. Nunca SIMULATOR. Índice UNIQUE parcial en PostgreSQL evita reseñas activas duplicadas incluso concurrentes. No expone pedido ni propiedad en JSON. BKL-051 añadirá formulario/vista pública.",
+        "description": "BKL-050: requiriere pedido CONFIRMED propio, order_items.product_id y shipments MANUAL DELIVERED con auditoría MANUAL_DELIVERY. Nunca SIMULATOR. Índice UNIQUE parcial en PostgreSQL evita reseñas activas duplicadas incluso concurrentes. No expone pedido ni propiedad en JSON. BKL-051 incorpora formulario y lista pública independiente.",
         "requestBody": {
           "required": true,
           "content": {
@@ -4291,6 +4291,54 @@
           },
           "409": {
             "description": "Problem Details sin SQL o datos personales",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "listActiveProductReviews",
+        "summary": "Consultar hasta 50 reseñas activas recientes sin datos personales",
+        "description": "BKL-051: lista pública de reseñas activas por producto. Solo puntuación, comentario y fecha; jamás devuelve userId, orderId, correo o dirección.",
+        "responses": {
+          "200": {
+            "description": "Reseñas públicas activas recientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 50,
+                  "items": {
+                    "$ref": "#/components/schemas/PublicProductReview"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto inexistente",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6466,6 +6514,31 @@
           "message": {
             "type": "string",
             "maxLength": 180
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PublicProductReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rating",
+          "comment",
+          "createdAt"
+        ],
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000
           },
           "createdAt": {
             "type": "string",
