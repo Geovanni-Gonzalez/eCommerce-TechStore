@@ -43,6 +43,10 @@
     {
       "name": "Payments",
       "description": "BKL-036: intentos persistentes e idempotentes de simulación; nunca representa cobro real"
+    },
+    {
+      "name": "Shipping",
+      "description": "Registro logístico manual ADMIN. No equivale a despacho/entrega real."
     }
   ],
   "paths": {
@@ -3582,6 +3586,194 @@
           }
         }
       }
+    },
+    "/api/admin/shipments/orders/{orderId}": {
+      "get": {
+        "tags": [
+          "Shipping"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "getAdminManualShipment",
+        "summary": "Consultar registro de envío manual por pedido",
+        "description": "Solo ADMIN, incluso si el adaptador está DISABLED. Retorna 404 si no existe. No revela dirección, guía ni seguimiento ficticio.",
+        "responses": {
+          "200": {
+            "description": "Tarea logística manual existente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Shipping"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "x-implementation-status": "implemented",
+        "operationId": "registerAdminManualShipment",
+        "summary": "Crear tarea de gestión logística para un pedido CONFIRMED",
+        "description": "Solo ADMIN; no acepta body, dirección, importe ni transportista. Requiere CONFIRMED bajo lock del pedido y TECHSTORE_SHIPPING_PROVIDER=MANUAL. Primer registro devuelve 201; reintento 200 sin duplicar. No implica envío ni modifica estado de pago, orden o stock.",
+        "responses": {
+          "200": {
+            "description": "Ya existía una tarea manual: repetición idempotente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentRecord"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Tarea logística manual creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details, sin datos del pedido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5328,6 +5520,54 @@
           "replayed": {
             "type": "boolean",
             "description": "true cuando el requestId ya se procesó y no hubo una segunda modificación"
+          }
+        }
+      },
+      "ShipmentRecord": {
+        "type": "object",
+        "description": "Registro mínimo de tarea logística; NO hay número de guía, proveedor, ETA, envío realizado ni datos personales.",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "orderId",
+          "fulfillmentMethod",
+          "status",
+          "openedByUserId",
+          "registeredAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "fulfillmentMethod": {
+            "type": "string",
+            "enum": [
+              "MANUAL"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_MANUAL"
+            ],
+            "description": "Solo solicitud de gestión manual; no enviado ni entregado."
+          },
+          "openedByUserId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "ID del administrador autenticado, no lo suministra el cliente."
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
