@@ -17,7 +17,7 @@ import org.springframework.stereotype.Repository;
  * El futuro controlador ADMIN reutilizará este puerto (BKL-026/BKL-046).
  */
 @Repository
-public final class JdbcInventoryReadRepository implements InventoryReadRepository {
+public class JdbcInventoryReadRepository implements InventoryReadRepository {
     private final JdbcTemplate jdbc;
 
     public JdbcInventoryReadRepository(JdbcTemplate jdbc) {
