@@ -42,6 +42,11 @@ No guarda datos personales. Un trigger impide UPDATE y DELETE.
 | ADJUSTMENT_IN | +q | 0 | +q |
 | ADJUSTMENT_OUT | −q | 0 | −q |
 
+Un trigger adicional impide borrar reservas, modificar su identidad o cantidad,
+insertarlas directamente en estado terminal y regresar de RELEASED/CONSUMED
+a RESERVED. Solo se permiten transiciones RESERVED → RELEASED/CONSUMED.
+Esto evita modificar saldos reservados sin pasar por un evento auditado.
+
 CHECK SQL garantiza `cantidad > 0`, igualdad
 `Δ físico = Δ disponible + Δ reservado` y signos/deltas por tipo.
 Para eventos de pedidos se exige `order_id`; para apertura y ajustes
