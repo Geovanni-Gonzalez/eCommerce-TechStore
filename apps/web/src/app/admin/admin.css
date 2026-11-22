@@ -55,3 +55,32 @@
   .admin-form { grid-template-columns:1fr; }
   .admin-field--wide, .admin-form>.admin-actions { grid-column:auto; }
 }
+
+/* BKL-046: navegación accesible y paneles responsivos de pedidos/inventario. */
+.admin-sections { display:flex; flex-wrap:wrap; gap:.45rem; margin:1.25rem 0;
+  border-bottom:1px solid #c6d4e1; padding:0 0 .7rem; }
+.admin-section-button { font:inherit; font-weight:700; border-radius:.55rem;
+  padding:.68rem 1rem; cursor:pointer; color:#164c82; background:#fff;
+  border:1px solid #b4c5d6; min-height:2.8rem; }
+.admin-section-button[aria-pressed="true"] { color:#fff; background:#174b84;
+  border-color:#174b84; }
+.admin-section-button:focus-visible { outline:3px solid #cf7519;outline-offset:3px; }
+.admin-section-heading { display:flex; align-items:flex-start; justify-content:space-between;
+  flex-wrap:wrap; gap:.85rem; margin-bottom:.9rem; }
+.admin-section-heading h2 { margin:.1rem 0 .4rem; }
+.admin-state { display:inline-block; border-radius:.4rem; padding:.25rem .5rem;
+  font-size:.85rem; font-weight:700; background:#edf2f7; color:#264157; }
+.admin-state--pending { background:#fff2d8; color:#774400; }
+.admin-state--confirmed { background:#e5f5ed; color:#19593c; }
+.admin-state--cancelled { background:#f2e9eb; color:#7a303a; }
+.admin-order-lines, .admin-audit-list { padding-left:1.3rem; margin:0 0 1rem; }
+.admin-order-lines li, .admin-audit-list li { padding:.45rem 0; overflow-wrap:anywhere; }
+.admin-audit-list small { display:block; color:#52677a; margin-top:.25rem; }
+.admin-adjustment { margin:1rem 0 1.4rem; border-top:1px solid #e0e8f0;
+  padding-top:1rem; }
+.admin-table td { overflow-wrap:anywhere; }
+@media(max-width:600px) {
+  .admin-section-button { flex:1; }
+  .admin-section-heading { display:block; }
+  .admin-section-heading > .admin-secondary { margin:.65rem 0; }
+}

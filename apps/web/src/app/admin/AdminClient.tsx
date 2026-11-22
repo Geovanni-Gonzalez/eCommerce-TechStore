@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { adminAccessCheck } from "@/lib/auth-client";
 import AdminCatalogManager from "./AdminCatalogManager";
+import AdminOrdersPanel from "./AdminOrdersPanel";
+import AdminInventoryPanel from "./AdminInventoryPanel";
 
 export default function AdminClient() {
   const { user, getToken, logout } = useAuth();
@@ -13,6 +15,7 @@ export default function AdminClient() {
   const token = getToken();
   const [verified, setVerified] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [section, setSection] = useState<"orders" | "inventory" | "catalog">("orders");
 
   useEffect(() => {
     if (user?.role !== "ADMIN" || !token) return;
@@ -46,7 +49,20 @@ export default function AdminClient() {
       ) : (
         <>
           <p role="status">Permiso ADMIN confirmado por la API.</p>
-          <AdminCatalogManager key={token} token={token} />
+          <nav className="admin-sections" aria-label="Secciones administrativas">
+            <button type="button" aria-pressed={section === "orders"}
+              className="admin-section-button"
+              onClick={() => setSection("orders")}>Pedidos</button>
+            <button type="button" aria-pressed={section === "inventory"}
+              className="admin-section-button"
+              onClick={() => setSection("inventory")}>Inventario</button>
+            <button type="button" aria-pressed={section === "catalog"}
+              className="admin-section-button"
+              onClick={() => setSection("catalog")}>Catálogo</button>
+          </nav>
+          {section === "orders" && <AdminOrdersPanel key={token} token={token} />}
+          {section === "inventory" && <AdminInventoryPanel key={token} token={token} />}
+          {section === "catalog" && <AdminCatalogManager key={token} token={token} />}
         </>
       )}
       <button type="button" className="auth-button" onClick={() => {

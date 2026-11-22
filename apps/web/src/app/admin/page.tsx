@@ -3,7 +3,7 @@ import AdminClient from "./AdminClient";
 import "./admin.css";
 
 export const metadata: Metadata = {
-  title: "Gestión de catálogo | TechStore",
+  title: "Administración de pedidos, inventario y catálogo | TechStore",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
