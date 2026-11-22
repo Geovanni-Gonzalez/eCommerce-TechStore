@@ -44,7 +44,7 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
               <nav aria-label="Enlaces del pie de página" className="site-footer__links">
                 <Link href="/productos">Explorar productos</Link>
                 <Link href="/carrito">Mi carrito</Link>
-                <Link href="/cuenta">Mi cuenta</Link>
+                <Link href="/cuenta">Área personal</Link>
               </nav>
             </div>
             <div className="site-footer__bottom">
