@@ -2,6 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import {formatCatalogCrc} from "@/lib/catalog";
+import AdminShipmentPanel from "./AdminShipmentPanel";
 import {useAuth} from "@/components/AuthProvider";
 import {
   AdminOperationError,adminCancelOrder,adminListOrders,adminOrderDetail,
@@ -218,6 +219,12 @@ export default function AdminOrdersPanel({token}:{token:string}) {
                 onClick={()=>setConfirmId(null)}>Conservar pedido</button>
             </div>
           </div>}
+          {current.detail.order.status==="CONFIRMED"&&
+            <AdminShipmentPanel key={current.detail.order.id}
+              orderId={current.detail.order.id} token={token}/>}
+          {current.detail.order.status!=="CONFIRMED"&&
+            <p className="admin-note">La gestión logística requiere un pedido CONFIRMED.
+              No se abren tareas manuales para pedidos pendientes o cancelados.</p>}
           <h3>Historial de estados</h3>
           {current.history.length===0?<p>Sin eventos disponibles.</p>:(
             <ol className="admin-audit-list">

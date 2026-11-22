@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import ShippingTrackingPanel from "./ShippingTrackingPanel";
+import { useCallback, useRef, useState } from "react";
 import { isSafeApiOrigin } from "@/lib/payment-result";
 import {
   ACTOR_COPY, REASON_COPY, STATUS_COPY, formatCrc, formatOrderDate,
@@ -74,9 +75,10 @@ function StatusTag({ status }: { status: OrderStatus }) {
 }
 
 function DetailView({
-  order, history,
+  order, history, getToken,
 }: {
   order: OrderDetail; history: OrderHistoryEntry[];
+  getToken:()=>string|null;
 }) {
   const address = order.shippingAddress;
   return (
@@ -131,6 +133,7 @@ function DetailView({
         <span>Teléfono: {address.phone}</span>
       </address>
 
+      <ShippingTrackingPanel orderId={order.id} getToken={getToken} />
       <h3>Historial de estados</h3>
       {history.length === 0 ? (
         <p className="orders-muted">
@@ -184,6 +187,8 @@ export default function OrdersClient() {
 
   // Token exclusivamente en memoria. Nunca pasar a URL, cookies o storage.
   const session = useRef<string | null>(null);
+  // La lectura del Bearer ocurre solo en efectos/handlers, nunca en render.
+  const getSessionToken = useCallback(() => session.current, []);
   const generation = useRef(0);
   const detailRequest = useRef(0);
   const activeListRequest = useRef(0);
@@ -510,7 +515,8 @@ export default function OrdersClient() {
                 </div>
               )}
               {selectedId !== null && detail !== null && !detailBusy && (
-                <DetailView order={detail} history={timeline} />
+                <DetailView order={detail} history={timeline}
+                  getToken={getSessionToken} />
               )}
             </section>
           </div>

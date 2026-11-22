@@ -14,6 +14,12 @@ public final class ManualShippingGateway implements ShippingGateway {
     }
 
     @Override
+    public ShipmentRecord advance(ShippingTransitionCommand command) {
+        Objects.requireNonNull(command, "command");
+        return shipments.advanceManual(command);
+    }
+
+    @Override
     public ShippingRegistration register(ShippingRegistrationCommand command) {
         Objects.requireNonNull(command, "command");
         return shipments.registerManual(command);

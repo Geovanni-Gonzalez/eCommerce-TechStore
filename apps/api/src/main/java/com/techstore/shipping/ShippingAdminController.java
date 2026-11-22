@@ -2,6 +2,8 @@ package com.techstore.shipping;
 
 import com.techstore.users.security.SessionPrincipal;
 import java.net.URI;
+import java.util.Map;
+import java.util.List;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +33,27 @@ public class ShippingAdminController {
     public ResponseEntity<ShipmentRecord> find(@PathVariable long orderId) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(service.findByOrderId(orderId));
+    }
+
+    @GetMapping(value="/orders/{orderId}/history",
+            produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ShipmentHistoryEntry>> history(@PathVariable long orderId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.history(orderId));
+    }
+
+    @PatchMapping(value="/orders/{orderId}/status",
+            consumes=MediaType.APPLICATION_JSON_VALUE,
+            produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ShipmentRecord> advance(
+            @AuthenticationPrincipal SessionPrincipal principal,
+            @PathVariable long orderId,
+            @RequestBody Map<String,Object> body) {
+        if(body==null||body.size()!=1||!(body.get("status") instanceof String name)
+                ||!(name.equals("IN_TRANSIT")||name.equals("DELIVERED")))
+            throw new IllegalArgumentException("Estado logístico inválido");
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.advance(principal.id(),orderId,ShippingStatus.valueOf(name)));
     }
 
     @PostMapping(value="/orders/{orderId}",produces=MediaType.APPLICATION_JSON_VALUE)

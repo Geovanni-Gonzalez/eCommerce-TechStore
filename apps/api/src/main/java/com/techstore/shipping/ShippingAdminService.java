@@ -32,6 +32,30 @@ public class ShippingAdminService {
         return gateway.register(new ShippingRegistrationCommand(orderId,actorId));
     }
 
+    /** No cambia orders, pagos ni stock; la auditoría SQL es atómica. */
+    @Transactional
+    public ShipmentRecord advance(long actorId,long orderId,ShippingStatus target) {
+        if(actorId<1||orderId<1||target==null)
+            throw new IllegalArgumentException("Solicitud logística inválida");
+        OrderStatus orderStatus=repository.lockOrderStatus(orderId)
+                .orElseThrow(ShippingNotFoundException::new);
+        if(orderStatus!=OrderStatus.CONFIRMED)
+            throw new ShippingOrderNotConfirmedException();
+        ShipmentRecord record=repository.findByOrderId(orderId)
+                .orElseThrow(ShippingNotFoundException::new);
+        if(record.status()==target)return record; // reintento sin duplicar hito
+        return gateway.advance(new ShippingTransitionCommand(
+                orderId,actorId,record.status(),target));
+    }
+
+    @Transactional(readOnly=true)
+    public java.util.List<ShipmentHistoryEntry> history(long orderId) {
+        if(orderId<1)throw new IllegalArgumentException("ID inválido");
+        repository.findByOrderId(orderId)
+                .orElseThrow(ShippingNotFoundException::new);
+        return repository.findHistoryByOrderId(orderId);
+    }
+
     @Transactional(readOnly=true)
     public ShipmentRecord findByOrderId(long orderId) {
         if(orderId<1)throw new IllegalArgumentException("ID inválido");

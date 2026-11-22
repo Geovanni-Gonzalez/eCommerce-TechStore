@@ -1,9 +1,10 @@
 package com.techstore.shipping;
 
-/**
- * BKL-047: solo pendiente de gestión manual, NO enviado ni entregado.
- * BKL-048 ampliará el ciclo de vida con transiciones auditadas.
- */
+/** Estados declarados por ADMIN, no comprobantes de un proveedor real. */
 public enum ShippingStatus {
-    PENDING_MANUAL
+    PENDING_MANUAL, IN_TRANSIT, DELIVERED;
+    public boolean canAdvanceTo(ShippingStatus target) {
+        return (this==PENDING_MANUAL && target==IN_TRANSIT)
+                || (this==IN_TRANSIT && target==DELIVERED);
+    }
 }

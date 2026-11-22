@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Objects;
+import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -38,6 +39,43 @@ public class JdbcShipmentRepository {
         return jdbc.query(PROJECTION + " WHERE order_id=?",
                 JdbcShipmentRepository::toRecord, orderId)
                 .stream().findFirst();
+    }
+
+    /** Solo puede conocer pedidos propios un cliente con ROLE_CLIENT. */
+    public Optional<OrderStatus> findOwnedOrderStatus(long userId,long orderId) {
+        return jdbc.query("""
+                SELECT status FROM orders WHERE id=? AND user_id=?
+                """,(rs,row)->OrderStatus.valueOf(rs.getString("status")),
+                orderId,userId).stream().findFirst();
+    }
+
+    public List<ShipmentHistoryEntry> findHistoryByOrderId(long orderId) {
+        return jdbc.query("""
+                SELECT h.id,h.shipment_id,h.from_status,h.to_status,
+                       h.actor_user_id,h.reason,h.changed_at
+                FROM shipment_status_history h
+                JOIN shipments s ON s.id=h.shipment_id
+                WHERE s.order_id=?
+                ORDER BY h.changed_at ASC,h.id ASC
+                """, (rs,row)->new ShipmentHistoryEntry(
+                rs.getLong("id"),rs.getLong("shipment_id"),
+                rs.getString("from_status")==null?null:
+                    ShippingStatus.valueOf(rs.getString("from_status")),
+                ShippingStatus.valueOf(rs.getString("to_status")),
+                rs.getLong("actor_user_id"),rs.getString("reason"),
+                rs.getObject("changed_at",OffsetDateTime.class)),orderId);
+    }
+
+    /** Bloqueo de orders adquirido por ShippingAdminService antes de este UPDATE. */
+    public ShipmentRecord advanceManual(ShippingTransitionCommand command) {
+        int changed=jdbc.update("""
+                UPDATE shipments SET status=?,last_changed_by_user_id=?
+                WHERE order_id=? AND status=?
+                """,command.toStatus().name(),command.actorUserId(),
+                command.orderId(),command.fromStatus().name());
+        if(changed!=1)throw new ShippingInvalidTransitionException();
+        return findByOrderId(command.orderId())
+                .orElseThrow(ShippingNotFoundException::new);
     }
 
     public ShippingRegistration registerManual(ShippingRegistrationCommand command) {

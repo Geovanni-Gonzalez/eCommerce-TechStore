@@ -22,7 +22,7 @@ public class ShippingAdminExceptionHandler {
             HttpMessageNotReadableException.class})
     ResponseEntity<ProblemDetail> invalid() {
         return problem(HttpStatus.BAD_REQUEST,"INVALID_SHIPMENT_REQUEST",
-                "El identificador del pedido debe ser positivo");
+                "Solicitud logística malformada o identificador inválido");
     }
 
     @ExceptionHandler(ShippingNotFoundException.class)
@@ -32,10 +32,11 @@ public class ShippingAdminExceptionHandler {
     }
 
     @ExceptionHandler({ShippingOrderNotConfirmedException.class,
+            ShippingInvalidTransitionException.class,
             DataIntegrityViolationException.class})
     ResponseEntity<ProblemDetail> conflict() {
         return problem(HttpStatus.CONFLICT,"SHIPMENT_NOT_ALLOWED",
-                "Solo un pedido confirmado admite registro logístico manual");
+                "El pedido o transición logística no admite esta operación");
     }
 
     @ExceptionHandler(ShippingGatewayUnavailableException.class)
