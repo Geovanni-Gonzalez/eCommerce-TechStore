@@ -102,6 +102,23 @@ class SignedSandboxWebhookVerifierTest {
                 SandboxWebhookService.parse(new byte[] {(byte)0xFF}));
     }
 
+
+    @Test
+    void identicalJsonMeaningWithChangedBytesDoesNotReuseSignature() throws Exception {
+        var verifier = new SignedSandboxWebhookVerifier(SECRET, CLOCK);
+        long epoch = CLOCK.instant().getEpochSecond();
+        byte[] compact = "{\"eventId\":\"event-0001\"}"
+                .getBytes(StandardCharsets.UTF_8);
+        byte[] withWhitespace = " {\"eventId\": \"event-0001\"} "
+                .getBytes(StandardCharsets.UTF_8);
+        verifier.verify(compact, String.valueOf(epoch), sign(epoch, compact));
+        assertThrows(WebhookAuthenticationException.class,
+                () -> verifier.verify(withWhitespace, String.valueOf(epoch),
+                        sign(epoch, compact)));
+        verifier.verify(withWhitespace, String.valueOf(epoch),
+                sign(epoch, withWhitespace));
+    }
+
     private static String sign(long epoch, byte[] raw) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(
