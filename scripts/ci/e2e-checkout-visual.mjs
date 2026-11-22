@@ -8,7 +8,9 @@ import {mkdirSync} from "node:fs";
 import {chromium} from "playwright";
 
 const browser = await chromium.launch({headless:true,args:["--no-sandbox"]});
-const page = await browser.newPage({viewport:{width:1280,height:850}});
+const viewport = process.env.E2E_VIEWPORT==="mobile"
+  ? {width:390,height:844} : {width:1280,height:850};
+const page = await browser.newPage({viewport});
 const email = "bkl034-" + randomUUID() + "@example.test";
 const password = "ClaveCheckoutE2E2026";
 const outcome = process.env.E2E_OUTCOME;
