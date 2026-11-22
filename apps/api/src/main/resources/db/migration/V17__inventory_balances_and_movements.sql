@@ -140,7 +140,7 @@ EXECUTE FUNCTION inventory_audit_reservation();
 -- de su creación, y una reserva terminal nunca vuelve a RESERVED.
 -- Sin este guard sería posible alterar el saldo sin dejar un evento.
 CREATE FUNCTION inventory_guard_reservation_mutation() RETURNS TRIGGER
-LANGUAGE plpgsql AS $
+LANGUAGE plpgsql AS $$
 BEGIN
     IF TG_OP = 'DELETE' THEN
         RAISE EXCEPTION 'No se pueden eliminar reservas históricas'
@@ -167,7 +167,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$;
+$$;
 CREATE TRIGGER trg_inventory_reservation_integrity
 BEFORE INSERT OR UPDATE OR DELETE ON stock_reservations
 FOR EACH ROW EXECUTE FUNCTION inventory_guard_reservation_mutation();
