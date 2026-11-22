@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ShippingTrackingPanel from "./ShippingTrackingPanel";
+import OrderNotificationsPanel from "./OrderNotificationsPanel";
 import { useCallback, useRef, useState } from "react";
 import { isSafeApiOrigin } from "@/lib/payment-result";
 import {
@@ -133,6 +134,7 @@ function DetailView({
         <span>Teléfono: {address.phone}</span>
       </address>
 
+      <OrderNotificationsPanel orderId={order.id} getToken={getToken} />
       <ShippingTrackingPanel orderId={order.id} getToken={getToken} />
       <h3>Historial de estados</h3>
       {history.length === 0 ? (

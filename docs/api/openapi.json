@@ -4301,6 +4301,89 @@
           }
         }
       }
+    },
+    "/api/orders/{id}/notifications": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "getOrderNotificationsForOwner",
+        "summary": "Avisos internos del pedido propio",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avisos internos, sin información privada de otros compradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderNotification"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bearer requerido",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Se requiere ROLE_CLIENT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido inexistente o ajeno",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "description": "Avisos BKL-053 generados AFTER_COMMIT; no son correos enviados ni acreditación bancaria."
+      }
     }
   },
   "components": {
@@ -6350,6 +6433,43 @@
             "type": "string",
             "minLength": 5,
             "maxLength": 1000
+          }
+        }
+      },
+      "OrderNotification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "orderId",
+          "type",
+          "message",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "orderId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ORDER_RECEIVED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 180
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

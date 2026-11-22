@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 52);
+  assert.equal(result.operationCount, 53);
   assert.equal(result.proposedCount, 0);
 });
 
@@ -285,4 +285,13 @@ test("BKL-050 protege reseñas, estado de entrega y evita IDs en el body", () =>
   const badReason = clone();
   badReason.components.schemas.ReviewEligibility.properties.reason.enum.push("SIMULATED_DELIVERY");
   assert.throws(() => validateContract(badReason), /BKL-050: estados de elegibilidad acotados/);
+});
+
+test("BKL-053 protege avisos in-app y su DTO no contiene PII", () => {
+  const withoutBearer=clone();
+  delete withoutBearer.paths["/api/orders/{id}/notifications"].get.security;
+  assert.throws(() => validateContract(withoutBearer), /Notificaciones BKL-053 requieren Bearer/);
+  const leaked=clone();
+  leaked.components.schemas.OrderNotification.properties.email={type:"string"};
+  assert.throws(() => validateContract(leaked), /BKL-053 no expone PII/);
 });

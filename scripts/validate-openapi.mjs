@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 52, "Se esperan 52 operaciones de API");
+  assert.equal(operationCount, 53, "Se esperan 53 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -98,6 +98,15 @@ export function validateContract(doc) {
     "#/components/schemas/CheckoutQuote", "Cotización debe devolver DTO");
   assert.ok(quote.responses["409"] && quote.responses["422"],
     "Cotización debe documentar carrito vacío e indisponible");
+  const notices = doc.paths["/api/orders/{id}/notifications"]?.get;
+  assert.ok(notices && notices["x-implementation-status"] === "implemented",
+    "BKL-053: avisos internos deben estar implementados");
+  assert.deepEqual(notices.security, [{bearerAuth: []}],
+    "Notificaciones BKL-053 requieren Bearer");
+  assert.equal(notices.responses["200"]?.content?.["application/json"]?.schema?.items?.$ref,
+    "#/components/schemas/OrderNotification", "BKL-053 exige DTO tipado");
+  assert.deepEqual(Object.keys(doc.components.schemas.OrderNotification?.properties ?? {}),
+    ["id", "orderId", "type", "message", "createdAt"], "BKL-053 no expone PII");
   const createdOrder = doc.paths["/api/orders"]?.post;
   assert.equal(createdOrder?.["x-implementation-status"], "implemented",
     "La creación transaccional de pedidos debe estar implementada");
