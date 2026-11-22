@@ -41,6 +41,11 @@ jobs:
           node --test scripts/ci/check-secret-files.test.mjs
           node scripts/ci/check-secret-files.mjs
 
+      - name: Validar sintaxis de runbooks operativos BKL-061
+        run: |
+          bash -n scripts/ops/backup-postgres.sh
+          bash -n scripts/ops/check-health.sh
+
       - name: Instalar dependencias reproducibles
         run: npm ci
 
