@@ -4,6 +4,15 @@ Prototipo académico de tienda B2C de accesorios tecnológicos para el Proyecto 
 
 **Entrega académica actualizada:** sábado 21 de noviembre de 2026, 10:00 p. m. (Costa Rica), según reprogramación comunicada por el equipo.
 
+## Manual operativo actualizado (BKL-063)
+
+Para diagnóstico de frontend/backend, pruebas, migraciones, decisiones de
+seguridad y recuperación, consultar
+[Manual de operación BKL-063](docs/ops/BKL-063_OPERATIONS_MANUAL.md).
+Los scripts de respaldo de prueba y salud preparados en BKL-061 están en
+[su runbook](docs/ops/BKL-061_BACKUP_AND_HEALTH.md). Ni el respaldo remoto
+ni un entorno staging activo se consideran terminados sin evidencia.
+
 ## Estructura
 
 ```text
