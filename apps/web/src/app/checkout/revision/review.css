@@ -41,3 +41,13 @@
   outline:3px solid #db781a; outline-offset:3px;
 }
 @media(max-width:850px){.review-layout{grid-template-columns:1fr;} }
+
+
+/* UI/UX refresh — resumen y confirmación sin alterar el checkout. */
+.review-intro h1 { letter-spacing: -.055em; }
+.review-panel { border-color: #dce6f0; border-radius: 1.1rem; box-shadow: var(--shadow-card); }
+.review-summary { position: sticky; top: 7rem; }
+.review-primary,.review-secondary { min-height: 46px; border-radius: .68rem; }
+.review-primary { background: #1d55a1; border-color: #1d55a1; }
+.review-totals__grand dd { color: #1b5097; }
+@media(max-width:850px) { .review-summary { position: static; } }
