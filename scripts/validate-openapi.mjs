@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 53, "Se esperan 53 operaciones de API");
+  assert.equal(operationCount, 54, "Se esperan 54 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -315,6 +315,15 @@ export function validateContract(doc) {
   // BKL-050: no permitir reseñas tras una entrega ficticia.
   const eligibility = doc.paths["/api/reviews/products/{productId}/eligibility"]?.get;
   const ownReview = doc.paths["/api/reviews/products/{productId}/mine"]?.get;
+  const publicReview = doc.paths["/api/reviews/products/{productId}"]?.get;
+  assert.ok(publicReview?.["x-implementation-status"] === "implemented",
+    "BKL-059: listado público de reseñas pendiente");
+  assert.deepEqual(publicReview.security,[],
+    "BKL-059: consulta pública sin Bearer");
+  assert.equal(publicReview.responses["200"]?.content?.["application/json"]?.schema?.items?.$ref,
+    "#/components/schemas/PublicProductReview", "BKL-059: listado público tipado");
+  assert.deepEqual(Object.keys(doc.components.schemas.PublicProductReview?.properties ?? {}),
+    ["rating","comment","createdAt"], "BKL-059: DTO público de reseñas sin PII");
   const createReview = doc.paths["/api/reviews/products/{productId}"]?.post;
   for (const endpoint of [eligibility, ownReview, createReview]) {
     assert.deepEqual(endpoint?.security, [{ bearerAuth: [] }],
