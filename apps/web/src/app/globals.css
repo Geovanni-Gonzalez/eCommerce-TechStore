@@ -27,13 +27,6 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
 button, input, select, textarea { font-family: inherit; }
 button { touch-action: manipulation; }
 ::selection { color: #10223c; background: #b9ddff; }
-.announcement { color: #ebf5ff; background: #101e38; font-size: .77rem; font-weight: 650; letter-spacing: .035em; }
-.announcement__inner {
-  width: min(100% - 2.5rem, 1200px); margin: 0 auto; min-height: 32px;
-  display: flex; align-items: center; justify-content: center; gap: .65rem; text-align: center;
-}
-.announcement__dot { width: .44rem; height: .44rem; border-radius: 50%; background: #70e7cf; box-shadow: 0 0 0 3px rgb(112 231 207 / 13%); }
-.announcement__separator { opacity: .48; }
 .site-header {
   position: sticky; top: 0; z-index: 40;
   background: rgb(255 255 255 / 95%); backdrop-filter: blur(14px);
