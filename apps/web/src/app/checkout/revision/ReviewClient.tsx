@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { getCart, CartHttpError } from "@/lib/cart-api";
+import { getCart } from "@/lib/cart-api";
 import { formatCatalogCrc } from "@/lib/catalog";
 import { validateShippingAddress } from "@/lib/shipping-address";
 import {
@@ -280,7 +280,7 @@ export default function ReviewClient() {
             role="alert">{message}</p>}
           {phase === "review" && currentQuote && (
             <>
-              <button type="button" className="review-primary" disabled={mutationRef.current}
+              <button type="button" className="review-primary" disabled={phase !== "review"}
                 onClick={() => void confirm()}>
                 Confirmar pedido y reservar existencias
               </button>

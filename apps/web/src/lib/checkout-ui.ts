@@ -10,8 +10,6 @@ const object = (v: unknown): Shape | null =>
   v && typeof v === "object" && !Array.isArray(v) ? v as Shape : null;
 const positive = (v: unknown): v is number =>
   typeof v === "number" && Number.isSafeInteger(v) && v > 0;
-const nonNegative = (v: unknown): v is number =>
-  typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 const nonEmpty = (v: unknown): v is string =>
   typeof v === "string" && v.trim().length > 0;
 const cents = (v: unknown): number | null => {
