@@ -4,7 +4,7 @@
  */
 import {isSafeApiOrigin} from "./payment-result";
 import type {ShippingAddress} from "./shipping-address";
-import type {ShipmentHistoryStatus} from "./shipping-tracking";
+import type {ShipmentHistoryStatus,ShippingMethod} from "./shipping-tracking";
 
 const BASE=(process.env.NEXT_PUBLIC_API_URL??"http://localhost:8080").replace(/\/$/,"");
 const integer=(v:unknown):v is number=>typeof v==="number"&&Number.isSafeInteger(v);
@@ -24,8 +24,8 @@ function failureMessage(status:number):string {
     case 401:return "Tu sesión caducó. Inicia sesión otra vez.";
     case 403:return "La API rechazó el permiso ADMIN.";
     case 404:return "El pedido o producto ya no existe.";
-    case 409:return "El estado o stock cambió, o el identificador ya se usó. Actualiza la información.";
-    case 503:return "El registro logístico manual no está habilitado en la API.";
+    case 409:return "El estado o stock cambió, o el envío pertenece a otro modo. Actualiza la información.";
+    case 503:return "El servicio logístico está deshabilitado o el simulador reporta indisponibilidad.";
     default:return "No se pudo confirmar la operación. Consulta el historial antes de repetirla.";
   }
 }
@@ -247,24 +247,26 @@ export async function adminAdjustInventory(token:string,productId:number,
 
 /* BKL-048: manejo ADMIN del contrato logístico manual, sin PII ni credenciales. */
 export type AdminShipment={
-  id:number;orderId:number;fulfillmentMethod:"MANUAL";
+  id:number;orderId:number;fulfillmentMethod:ShippingMethod;
   status:ShipmentHistoryStatus;openedByUserId:number;registeredAt:string;
 };
 export type AdminShipmentHistory={
   id:number;shipmentId:number;fromStatus:ShipmentHistoryStatus|null;
   toStatus:ShipmentHistoryStatus;actorUserId:number;
-  reason:"MANUAL_REGISTERED"|"MANUAL_DISPATCH"|"MANUAL_DELIVERY";changedAt:string;
+  reason:"MANUAL_REGISTERED"|"MANUAL_DISPATCH"|"MANUAL_DELIVERY"
+    |"SIMULATOR_REGISTERED"|"SIMULATOR_DISPATCH"|"SIMULATOR_DELIVERY";changedAt:string;
 };
 function shipmentStatus(s:unknown):s is ShipmentHistoryStatus {
   return s==="PENDING_MANUAL"||s==="IN_TRANSIT"||s==="DELIVERED";
 }
 function shipment(raw:unknown,orderId:number):AdminShipment {
   const s=object(raw);
-  if(!positive(s.id)||s.orderId!==orderId||s.fulfillmentMethod!=="MANUAL"
+  if(!positive(s.id)||s.orderId!==orderId
+      ||(s.fulfillmentMethod!=="MANUAL"&&s.fulfillmentMethod!=="SIMULATOR")
       ||!shipmentStatus(s.status)||!positive(s.openedByUserId)
       ||typeof s.registeredAt!=="string"||!Number.isFinite(Date.parse(s.registeredAt)))
     throw new Error("Registro logístico administrativo inválido.");
-  return {id:s.id,orderId,fulfillmentMethod:"MANUAL",status:s.status,
+  return {id:s.id,orderId,fulfillmentMethod:s.fulfillmentMethod,status:s.status,
     openedByUserId:s.openedByUserId,registeredAt:s.registeredAt};
 }
 export async function adminGetShipment(token:string,orderId:number,signal?:AbortSignal) {
@@ -286,7 +288,9 @@ export async function adminShipmentHistory(token:string,orderId:number,signal?:A
     if(!positive(h.id)||!positive(h.shipmentId)
       ||(h.fromStatus!==null&&!shipmentStatus(h.fromStatus))
       ||!shipmentStatus(h.toStatus)||!positive(h.actorUserId)
-      ||!["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY"].includes(String(h.reason))
+      ||!["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY",
+        "SIMULATOR_REGISTERED","SIMULATOR_DISPATCH","SIMULATOR_DELIVERY"]
+        .includes(String(h.reason))
       ||typeof h.changedAt!=="string"||!Number.isFinite(Date.parse(h.changedAt)))
       throw new Error("Hito logístico inválido.");
     return {id:h.id,shipmentId:h.shipmentId,

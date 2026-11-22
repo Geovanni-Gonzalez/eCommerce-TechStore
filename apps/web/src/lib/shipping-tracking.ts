@@ -6,13 +6,16 @@ import {isSafeApiOrigin} from "./payment-result";
 const BASE=(process.env.NEXT_PUBLIC_API_URL??"http://localhost:8080").replace(/\/$/,"");
 export type ManualShippingStatus="NOT_REGISTERED"|"PENDING_MANUAL"|"IN_TRANSIT"|"DELIVERED";
 export type ShipmentHistoryStatus=Exclude<ManualShippingStatus,"NOT_REGISTERED">;
+export type ShippingMethod="MANUAL"|"SIMULATOR";
 export type ShippingEvent={
   status:ShipmentHistoryStatus;
-  event:"MANUAL_REGISTERED"|"MANUAL_DISPATCH"|"MANUAL_DELIVERY";
+  event:"MANUAL_REGISTERED"|"MANUAL_DISPATCH"|"MANUAL_DELIVERY"
+    |"SIMULATOR_REGISTERED"|"SIMULATOR_DISPATCH"|"SIMULATOR_DELIVERY";
   changedAt:string;
 };
 export type ShippingTracking={
-  orderId:number;status:ManualShippingStatus;registeredAt:string|null;
+  orderId:number;status:ManualShippingStatus;
+  fulfillmentMethod:ShippingMethod|null;registeredAt:string|null;
   events:ShippingEvent[];
 };
 export const SHIPPING_COPY:Record<ManualShippingStatus,string>={
@@ -21,10 +24,19 @@ export const SHIPPING_COPY:Record<ManualShippingStatus,string>={
   IN_TRANSIT:"Despacho declarado por administración",
   DELIVERED:"Entrega declarada por administración",
 };
+export const SHIPPING_SIMULATOR_COPY:Record<ManualShippingStatus,string>={
+  NOT_REGISTERED:"Sin tarea de simulación registrada",
+  PENDING_MANUAL:"Preparación de simulación pendiente",
+  IN_TRANSIT:"Tránsito simulado (sin envío físico)",
+  DELIVERED:"Entrega simulada (no acredita recepción)",
+};
 export const SHIPPING_EVENT_COPY:Record<ShippingEvent["event"],string>={
   MANUAL_REGISTERED:"Tarea manual registrada",
   MANUAL_DISPATCH:"Despacho registrado manualmente",
   MANUAL_DELIVERY:"Entrega registrada manualmente",
+  SIMULATOR_REGISTERED:"Tarea de simulación creada",
+  SIMULATOR_DISPATCH:"Tránsito simulado, sin transporte real",
+  SIMULATOR_DELIVERY:"Entrega simulada, sin recepción acreditada",
 };
 const validId=(x:unknown):x is number=>typeof x==="number"&&Number.isSafeInteger(x)&&x>0;
 const date=(x:unknown):x is string=>typeof x==="string"&&Number.isFinite(Date.parse(x));
@@ -38,7 +50,8 @@ const status=(s:unknown):s is ManualShippingStatus=>
 const event=(x:unknown):ShippingEvent=>{
   const o=obj(x);
   if(!status(o.status)||o.status==="NOT_REGISTERED"
-    ||!["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY"].includes(String(o.event))
+    ||!["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY",
+      "SIMULATOR_REGISTERED","SIMULATOR_DISPATCH","SIMULATOR_DELIVERY"].includes(String(o.event))
     ||!date(o.changedAt))
     throw new Error("Evento logístico inválido.");
   return {status:o.status,
@@ -53,16 +66,22 @@ export function parseShippingTracking(raw:unknown,orderId:number):ShippingTracki
   const events=o.events.map(event);
   const stages:ShipmentHistoryStatus[]=["PENDING_MANUAL","IN_TRANSIT","DELIVERED"];
   if(o.status==="NOT_REGISTERED") {
-    if(o.registeredAt!==null||events.length!==0)
+    if(o.fulfillmentMethod!==null||o.registeredAt!==null||events.length!==0)
       throw new Error("Estado logístico inconsistente.");
   } else {
+    if(o.fulfillmentMethod!=="MANUAL"&&o.fulfillmentMethod!=="SIMULATOR")
+      throw new Error("Origen de envío desconocido.");
     const stage=stages.indexOf(o.status);
+    const expected=o.fulfillmentMethod==="SIMULATOR"
+      ?["SIMULATOR_REGISTERED","SIMULATOR_DISPATCH","SIMULATOR_DELIVERY"]
+      :["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY"];
     if(!date(o.registeredAt)||events.length!==stage+1
-      ||events.some((e,i)=>e.status!==stages[i]
-        ||e.event!==["MANUAL_REGISTERED","MANUAL_DISPATCH","MANUAL_DELIVERY"][i]))
+      ||events.some((e,i)=>e.status!==stages[i]||e.event!==expected[i]))
       throw new Error("Historial logístico inconsistente.");
   }
-  return {orderId,status:o.status,registeredAt:o.registeredAt as string|null,events};
+  return {orderId,status:o.status,
+    fulfillmentMethod:o.fulfillmentMethod as ShippingMethod|null,
+    registeredAt:o.registeredAt as string|null,events};
 }
 export async function getCustomerShippingTracking(
   token:string,orderId:number,signal?:AbortSignal):Promise<ShippingTracking> {
