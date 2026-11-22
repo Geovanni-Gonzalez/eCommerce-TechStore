@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import {useState} from "react";
+import {useRef, useState, type KeyboardEvent} from "react";
 import AccountNav from "./AccountNav";
 
 const links = [
@@ -16,11 +16,18 @@ const links = [
 export default function SiteNavigation() {
   const pathname = usePathname();
   const [open,setOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const close = () => setOpen(false);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape" && open) {
+      setOpen(false);
+      toggleRef.current?.focus();
+    }
+  };
 
   return (
-    <div className="site-nav">
-      <button type="button" className="site-nav__toggle"
+    <div className="site-nav" onKeyDown={onKeyDown}>
+      <button type="button" ref={toggleRef} className="site-nav__toggle"
         aria-controls="primary-navigation" aria-expanded={open}
         onClick={() => setOpen(value => !value)}>
         <span className="site-nav__toggle-lines" aria-hidden="true"><span/><span/><span/></span>
@@ -40,7 +47,7 @@ export default function SiteNavigation() {
               </li>
             );
           })}
-          <AccountNav />
+          <AccountNav onNavigate={close} />
           <li className="site-nav__register">
             <Link href="/registro" onClick={close}>Crear cuenta</Link>
           </li>
