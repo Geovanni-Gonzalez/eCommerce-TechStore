@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.techstore.cart.repository.CartRepository;
 import com.techstore.orders.domain.ShippingAddress;
+import com.techstore.orders.domain.Order;
+import com.techstore.orders.service.OrderReservationService;
 import com.techstore.orders.inventory.InsufficientStockException;
 import com.techstore.orders.pricing.UnavailableCheckoutItemException;
 import com.techstore.orders.service.CheckoutFacade;
@@ -34,6 +36,7 @@ class CheckoutConcurrencyIT {
     @Autowired JdbcTemplate jdbc;
     @Autowired CartRepository carts;
     @Autowired CheckoutFacade checkout;
+    @Autowired OrderReservationService lifecycle;
 
     private long alice;
     private long bob;
@@ -93,6 +96,56 @@ class CheckoutConcurrencyIT {
                 SELECT COUNT(*) FROM cart_items ci JOIN carts c ON c.id=ci.cart_id
                 WHERE c.user_id IN (?, ?)
                 """, Integer.class, alice, bob));
+    }
+
+
+    @Test
+    void simultaneousExpirationReleasesReservationExactlyOnce() throws Exception {
+        Order order = checkout.confirm(alice, address());
+        assertEquals(0, stock());
+        jdbc.update("""
+                UPDATE stock_reservations
+                SET expires_at=CURRENT_TIMESTAMP - INTERVAL '1 minute'
+                WHERE order_id=?
+                """, order.id());
+
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+        Callable<Boolean> expire = () -> {
+            ready.countDown();
+            assertTrue(start.await(10, TimeUnit.SECONDS));
+            return lifecycle.expireOne(order.id());
+        };
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            Future<Boolean> first = pool.submit(expire);
+            Future<Boolean> second = pool.submit(expire);
+            assertTrue(ready.await(10, TimeUnit.SECONDS));
+            start.countDown();
+            int completed = (first.get(20, TimeUnit.SECONDS) ? 1 : 0)
+                    + (second.get(20, TimeUnit.SECONDS) ? 1 : 0);
+            assertEquals(1, completed,
+                    "Solo un worker debe cancelar la reserva expirada");
+        }
+
+        assertEquals(1, stock(), "La unidad debe liberarse una sola vez");
+        assertEquals("CANCELLED", jdbc.queryForObject(
+                "SELECT status FROM orders WHERE id=?", String.class, order.id()));
+        assertEquals("RELEASED", jdbc.queryForObject(
+                "SELECT status FROM stock_reservations WHERE order_id=?",
+                String.class, order.id()));
+        assertEquals(1, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM order_status_history
+                WHERE order_id=? AND reason='EXPIRED'
+                """, Integer.class, order.id()));
+
+        Order secondOrder = checkout.confirm(bob, address());
+        assertTrue(secondOrder.id() > 0);
+        assertEquals(0, stock(), "Nueva compra consume la única unidad liberada");
+    }
+
+    private int stock() {
+        return jdbc.queryForObject(
+                "SELECT stock FROM products WHERE id=?", Integer.class, product);
     }
 
     private boolean attempt(long userId, CountDownLatch ready, CountDownLatch start)
