@@ -43,3 +43,21 @@
 .auth-profile > div { display: flex; flex-wrap: wrap; gap: .8rem; }
 .auth-profile dt { font-weight: 700; min-width: 4rem; }
 .auth-profile dd { margin: 0; overflow-wrap: anywhere; }
+
+
+/* UI/UX refresh — formularios claros, contraste y controles táctiles. */
+.auth-page { padding: clamp(1rem,4.5vw,3.4rem) 0; }
+.auth-card { width: min(100%, 590px); border-color: #dce6f1; border-radius: 1.25rem;
+  box-shadow: 0 22px 48px rgb(18 47 86 / 8%);
+  padding: clamp(1.45rem,4vw,3rem); }
+.auth-card h1 { letter-spacing: -.055em; font-size: clamp(2.25rem,4.5vw,3rem); }
+.auth-card > p:not(.eyebrow) { color: #50667e; }
+.auth-form { gap: .7rem; }
+.auth-form label { color: #273f59; font-size: .9rem; }
+.auth-form input { min-height: 49px; padding: .75rem .9rem; border-color: #b6c8da; border-radius: .7rem; }
+.auth-form input:hover { border-color: #779fc5; }
+.auth-button { min-height: 49px; margin-top: 1.2rem; border-radius: .7rem; background: #1d55a1; border-color: #1d55a1; }
+.auth-button:hover:not(:disabled) { background: #143d77; }
+.auth-footer { padding-top: 1rem; border-top: 1px solid #e7edf4; }
+.auth-footer a { font-weight: 800; }
+.auth-help { font-size: .81rem; }

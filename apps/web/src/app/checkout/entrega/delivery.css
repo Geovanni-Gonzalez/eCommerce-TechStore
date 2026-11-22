@@ -62,3 +62,15 @@
   .delivery-fields { grid-template-columns: minmax(0, 1fr); }
   .delivery-review > div { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
 }
+
+
+/* UI/UX refresh — consistencia de la captura de entrega. */
+.delivery-intro h1 { letter-spacing: -.055em; }
+.delivery-card { border-color: #dce5f0; border-radius: 1.15rem; box-shadow: var(--shadow-card); }
+.delivery-field label { color: #293f5a; }
+.delivery-field input, .delivery-field select, .delivery-field textarea {
+  border-color: #b8c9dc; border-radius: .66rem; padding: .78rem .9rem; }
+.delivery-field input, .delivery-field select { min-height: 48px; }
+.delivery-primary,.delivery-secondary,.delivery-quiet { min-height: 46px; border-radius: .68rem; }
+.delivery-primary { background: #1d55a1; border-color: #1d55a1; }
+.delivery-secondary { color: #1d55a1; border-color: #9fb6d0; }

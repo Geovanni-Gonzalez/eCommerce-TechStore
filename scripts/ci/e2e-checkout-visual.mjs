@@ -33,7 +33,12 @@ try {
   await page.waitForURL("**/cuenta",{timeout:15000});
 
   // El token de cliente vive solo en AuthProvider; navegación Next interna.
-  await page.getByRole("link",{name:"Productos",exact:true}).click();
+  if (viewport.width < 860) {
+    // En móvil, la navegación accesible permanece plegada hasta abrir el menú.
+    await page.getByRole("button",{name:"Menú"}).click();
+  }
+  await page.getByRole("navigation",{name:"Navegación principal"})
+    .getByRole("link",{name:"Productos",exact:true}).click();
   await page.getByRole("button",{name:"Añadir Mouse inalámbrico Demo al carrito"}).click();
   await page.waitForURL("**/carrito",{timeout:15000});
   await page.getByRole("link",{name:"Preparar dirección de entrega"}).click();
