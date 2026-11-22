@@ -26,8 +26,6 @@ export default function ProductReviews({ productId }: { productId: number }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setListError("");
     listReviews(productId, controller.signal)
       .then((items) => { if (!controller.signal.aborted) setReviews(items); })
       .catch(() => { if (!controller.signal.aborted) setListError("No se pudieron cargar las reseñas."); })
@@ -38,8 +36,6 @@ export default function ProductReviews({ productId }: { productId: number }) {
   useEffect(() => {
     const controller = new AbortController();
     const token = user?.role === "CLIENT" ? getToken() : null;
-    setEligibility(null);
-    setEligibilityError("");
     if (!token) return () => controller.abort();
     getReviewEligibility(token, productId, controller.signal)
       .then((value) => { if (!controller.signal.aborted && getToken() === token) setEligibility(value); })
@@ -49,7 +45,7 @@ export default function ProductReviews({ productId }: { productId: number }) {
         }
       });
     return () => controller.abort();
-  }, [productId, user, refresh]);
+  }, [productId, user, getToken, refresh]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,6 +65,8 @@ export default function ProductReviews({ productId }: { productId: number }) {
         setNotice("Tu reseña se publicó correctamente.");
         setRating(0);
         setComment("");
+        setEligibility(null);
+        setLoading(true);
         setRefresh((n) => n + 1);
       }
     } catch (cause: unknown) {
@@ -76,7 +74,11 @@ export default function ProductReviews({ productId }: { productId: number }) {
         await logout();
       }
       setSubmitError(cause instanceof Error ? cause.message : "No se pudo publicar la reseña.");
-      if (cause instanceof ReviewHttpError && cause.status === 409) setRefresh((n) => n + 1);
+      if (cause instanceof ReviewHttpError && cause.status === 409) {
+        setEligibility(null);
+        setLoading(true);
+        setRefresh((n) => n + 1);
+      }
     } finally {
       setBusy(false);
     }
@@ -87,7 +89,7 @@ export default function ProductReviews({ productId }: { productId: number }) {
       <h2 id="product-reviews-title">Reseñas del producto</h2>
       {loading ? <p role="status">Cargando reseñas…</p>
         : listError ? <div role="alert"><p>{listError}</p>
-            <button type="button" onClick={() => setRefresh((n) => n + 1)}>Reintentar</button>
+            <button type="button" onClick={() => { setLoading(true); setListError(""); setRefresh((n) => n + 1); }}>Reintentar</button>
           </div>
         : reviews.length === 0 ? <p>Todavía no hay reseñas publicadas.</p>
         : <ol className="product-reviews__list">
@@ -106,7 +108,7 @@ export default function ProductReviews({ productId }: { productId: number }) {
         <h3>Escribe una reseña</h3>
         {!user ? <p><Link href="/login">Inicia sesión</Link> para consultar si puedes reseñar.</p>
           : user.role !== "CLIENT" ? <p>Solo las cuentas de cliente pueden publicar reseñas.</p>
-          : eligibilityError ? <p role="alert">{eligibilityError} <button type="button" onClick={() => setRefresh((n) => n + 1)}>Reintentar</button></p>
+          : eligibilityError ? <p role="alert">{eligibilityError} <button type="button" onClick={() => { setEligibility(null); setEligibilityError(""); setRefresh((n) => n + 1); }}>Reintentar</button></p>
           : !eligibility ? <p role="status">Comprobando requisitos para publicar…</p>
           : !eligibility.eligible ? <p role="status">{eligibility.hasActiveReview
               ? "Ya publicaste una reseña para este producto."
