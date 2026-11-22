@@ -58,7 +58,7 @@ export default function OrderNotificationsPanel({
     return ()=>controller.abort();
   },[orderId,getToken,reload]);
 
-  return <section aria-label="Avisos del pedido">
+  return <section className="orders-notices" aria-label="Avisos del pedido">
     <h3>Avisos de tu pedido</h3>
     {!data&&!error&&<p role="status">Cargando avisos…</p>}
     {error&&<p role="alert" className="orders-error">{error}</p>}
