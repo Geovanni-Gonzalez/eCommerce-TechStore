@@ -36,6 +36,11 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Comprobar archivos Git y secretos BKL-070
+        run: |
+          node --test scripts/ci/check-secret-files.test.mjs
+          node scripts/ci/check-secret-files.mjs
+
       - name: Instalar dependencias reproducibles
         run: npm ci
 
