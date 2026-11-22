@@ -11,8 +11,18 @@ public interface ProductRepository {
     Optional<Product> findActiveById(long id);
     long countActive();
 
-    List<Product> findActiveFilteredPage(ProductSearchCriteria criteria, int limit, long offset);
-    long countActiveFiltered(ProductSearchCriteria criteria);
-    List<CatalogFacet> findAvailableCategories();
-    List<String> findAvailableBrands();
+    /** Métodos nuevos opcionales para implementaciones existentes de lectura. */
+    default List<Product> findActiveFilteredPage(
+            ProductSearchCriteria criteria, int limit, long offset) {
+        throw new UnsupportedOperationException("Esta implementación no dispone de filtros");
+    }
+    default long countActiveFiltered(ProductSearchCriteria criteria) {
+        throw new UnsupportedOperationException("Esta implementación no dispone de filtros");
+    }
+    default List<CatalogFacet> findAvailableCategories() {
+        return List.of();
+    }
+    default List<String> findAvailableBrands() {
+        return List.of();
+    }
 }
