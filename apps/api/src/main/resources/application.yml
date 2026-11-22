@@ -2,7 +2,8 @@ spring:
   application:
     name: techstore-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/techstore}
+    # DB_URL conserva compatibilidad local/CI; Render inyecta DB_HOST/PORT/NAME por separado.
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:techstore}}
     username: ${DB_USERNAME:techstore}
     # Configurar la clave mediante SPRING_DATASOURCE_PASSWORD, nunca en Git.
   flyway:
