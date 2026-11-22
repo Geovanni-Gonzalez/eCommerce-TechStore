@@ -72,6 +72,20 @@ descuento/incremento. Reutilizar el UUID con valores distintos falla 409.
 - 500: otro fallo interno (sin detalles SQL).
 - Todos se representan como Problem Details sin PII.
 
+## Compatibilidad del módulo BKL-025 con la base aislada de CI
+
+La migración adicional **V19** mantiene inmutables movimientos y reservas
+en cualquier base de datos distinta de `techstore_test`. Únicamente en
+esa base de pruebas, permite que las limpiezas históricas eliminen
+`stock_reservations` y retiren sus movimientos asociados antes de
+borrar pedidos. No permite editar balances ni borrar historia en
+producción. Este ajuste es necesario porque los escenarios existentes
+limpian fixtures entre suites y de otro modo quedan bloqueados por
+la auditoría introducida en V17.
+
+Las migraciones V17 y V18 ya aplicadas no se modifican; V19 es
+incremental y puede aplicarse mediante Flyway sin reparación de checksum.
+
 ## Próximo bloque y QA final
 
 El panel visual de inventario/pedidos se entregará en **BKL-046**.
