@@ -24,7 +24,7 @@ export default function Home() {
             <span><span aria-hidden="true">✓</span> Stock desde la API</span>
           </div>
         </div>
-        <div className="home-showcase" aria-label="Ilustración conceptual de accesorios tecnológicos">
+        <div className="home-showcase" role="img" aria-label="Ilustración conceptual de accesorios tecnológicos">
           <span className="home-showcase__orbit home-showcase__orbit--one" aria-hidden="true"/>
           <span className="home-showcase__orbit home-showcase__orbit--two" aria-hidden="true"/>
           <div className="home-showcase__label"><span className="home-showcase__signal" aria-hidden="true"/> TECH ESSENTIALS / 01</div>
