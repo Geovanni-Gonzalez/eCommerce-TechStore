@@ -252,3 +252,24 @@ test("BKL-042 impone paginación acotada sin propietario elegido", () => {
   assert.throws(() => validateContract(spoof),
     /BKL-042: identidad no puede provenir del navegador/);
 });
+
+test("BKL-052 diferencia origen SIMULATOR y audita sus eventos", () => {
+  const noOrigin = clone();
+  noOrigin.components.schemas.ShippingTrackingView.required =
+    noOrigin.components.schemas.ShippingTrackingView.required
+      .filter(x => x !== "fulfillmentMethod");
+  assert.throws(() => validateContract(noOrigin),
+    /BKL-052: el origen logístico es obligatorio/);
+
+  const noSimulation = clone();
+  noSimulation.components.schemas.ShipmentRecord.properties.fulfillmentMethod.enum =
+    ["MANUAL"];
+  assert.throws(() => validateContract(noSimulation),
+    /BKL-052: métodos logísticos explícitos/);
+
+  const noAudit = clone();
+  noAudit.components.schemas.ShipmentHistoryEntry.properties.reason.enum =
+    ["MANUAL_REGISTERED", "MANUAL_DISPATCH", "MANUAL_DELIVERY"];
+  assert.throws(() => validateContract(noAudit),
+    /BKL-052: la auditoría diferencia eventos de simulación/);
+});
