@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { adminAccessCheck } from "@/lib/auth-client";
+import AdminCatalogManager from "./AdminCatalogManager";
 
 export default function AdminClient() {
   const { user, getToken, logout } = useAuth();
@@ -37,7 +38,7 @@ export default function AdminClient() {
     );
   }
   return (
-    <section className="auth-card" aria-labelledby="admin-title">
+    <section className="admin-page" aria-labelledby="admin-title">
       <p className="eyebrow">Acceso administrativo · TechStore</p>
       <h1 id="admin-title">Administración</h1>
       {verified !== token ? (
@@ -45,8 +46,7 @@ export default function AdminClient() {
       ) : (
         <>
           <p role="status">Permiso ADMIN confirmado por la API.</p>
-          <p>La gestión visual de productos e inventario se implementará en
-            BKL-023, BKL-024 y BKL-046. Esta pantalla solo comprueba autorización.</p>
+          <AdminCatalogManager key={token} token={token} />
         </>
       )}
       <button type="button" className="auth-button" onClick={() => {
