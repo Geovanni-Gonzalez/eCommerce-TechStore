@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 53);
+  assert.equal(result.operationCount, 54);
   assert.equal(result.proposedCount, 0);
 });
 
@@ -294,4 +294,14 @@ test("BKL-053 protege avisos in-app y su DTO no contiene PII", () => {
   const leaked=clone();
   leaked.components.schemas.OrderNotification.properties.email={type:"string"};
   assert.throws(() => validateContract(leaked), /BKL-053 no expone PII/);
+});
+
+test("BKL-059: listado público de reseñas debe ser anónimo y sin PII", () => {
+  const protectedGet=clone();
+  protectedGet.paths["/api/reviews/products/{productId}"].get.security=
+    [{bearerAuth:[]}];
+  assert.throws(()=>validateContract(protectedGet),/BKL-059: consulta pública sin Bearer/);
+  const leaked=clone();
+  leaked.components.schemas.PublicProductReview.properties.userId={type:"integer"};
+  assert.throws(()=>validateContract(leaked),/BKL-059: DTO público de reseñas sin PII/);
 });
