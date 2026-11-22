@@ -46,6 +46,9 @@ jobs:
           bash -n scripts/ops/backup-postgres.sh
           bash -n scripts/ops/check-health.sh
 
+      - name: Probar políticas de configuración staging BKL-060
+        run: node --test scripts/ops/validate-staging-config.test.mjs
+
       - name: Instalar dependencias reproducibles
         run: npm ci
 
