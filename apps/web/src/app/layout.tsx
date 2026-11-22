@@ -17,14 +17,6 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
       <body>
         <AuthProvider>
           <a className="skip-link" href="#contenido">Saltar al contenido</a>
-          <div className="announcement">
-            <div className="announcement__inner">
-              <span className="announcement__dot" aria-hidden="true"/>
-              <span>Experiencia de demostración académica</span>
-              <span className="announcement__separator" aria-hidden="true">·</span>
-              <span>No se realizan cobros reales</span>
-            </div>
-          </div>
           <header className="site-header">
             <div className="site-header__inner">
               <Link className="brand" href="/" aria-label="TechStore, ir al inicio">
