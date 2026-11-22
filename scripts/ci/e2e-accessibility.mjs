@@ -39,7 +39,7 @@ try {
       assert.ok(focus?.skip, "Tab inicial debe enfocar el enlace de salto");
       assert.ok(focus.outline>=2, "El foco de teclado debe ser visible");
       await page.keyboard.press("Enter");
-      assert.equal(new URL(page.url()).hash,"#main-content",
+      assert.equal(new URL(page.url()).hash,"#contenido",
         "El enlace de salto debe llevar a la región principal");
     }
 
@@ -47,7 +47,7 @@ try {
     await page.getByRole("heading",{name:"Explora nuestros productos"}).waitFor();
     await page.getByRole("searchbox",{name:"Buscar por nombre o palabra clave"}).waitFor();
     await page.getByRole("combobox",{name:"Categoría"}).waitFor();
-    await page.getByRole("textbox",{name:"Marca"}).waitFor();
+    await page.getByLabel("Marca").waitFor();
     await page.getByRole("button",{name:"Aplicar filtros"}).waitFor();
     await page.goto(origin+"/login");
     await page.getByLabel("Correo electrónico").waitFor();
