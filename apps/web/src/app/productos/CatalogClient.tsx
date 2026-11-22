@@ -30,6 +30,8 @@ function FilterForm({
   const [minPrice,setMinPrice]=useState(filters.minPriceCrc ?? "");
   const [maxPrice,setMaxPrice]=useState(filters.maxPriceCrc ?? "");
   const [problem,setProblem]=useState("");
+  const activeCount = [filters.q,filters.categoryId,filters.brand,
+    filters.minPriceCrc,filters.maxPriceCrc].filter(value => value !== null).length;
 
   function apply(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,8 +52,18 @@ function FilterForm({
 
   return (
     <form className="catalog-filters" onSubmit={apply} aria-label="Buscar y filtrar productos">
+      <div className="catalog-filters__top">
+        <div>
+          <p className="catalog-filters__kicker">Encuentra tu próximo accesorio</p>
+          <h2>Filtra a tu manera</h2>
+        </div>
+        <span className="catalog-filters__count">
+          {activeCount ? `${activeCount} filtro${activeCount === 1 ? "" : "s"} activo${activeCount === 1 ? "" : "s"}`
+            : "Todos los productos"}
+        </span>
+      </div>
       <div className="catalog-filters__row">
-        <div className="catalog-filter-field">
+        <div className="catalog-filter-field catalog-filter-field--search">
           <label htmlFor="catalog-search">Buscar por nombre o palabra clave</label>
           <input id="catalog-search" type="search" maxLength={120}
             placeholder="Ej. mouse inalámbrico" value={q}
@@ -151,19 +163,34 @@ export default function CatalogClient() {
   return (
     <>
       <FilterForm key={searchKey} filters={filters} choices={choices} />
-      {!current ? <p className="catalog-feedback" role="status">
-        Buscando productos en TechStore…
-      </p> : current.error || !current.data ? (
+      {!current ? (
+        <div className="catalog-loading" role="status" aria-live="polite">
+          <div className="catalog-loading__message">
+            <span className="catalog-loading__spinner" aria-hidden="true" />
+            <div><strong>Buscando productos en TechStore…</strong>
+              <p>El servidor de demostración puede tardar en activarse.</p>
+            </div>
+          </div>
+          <div className="catalog-skeletons" aria-hidden="true">
+            {[0,1,2].map(n=><div key={n} className="catalog-skeleton">
+              <div className="catalog-skeleton__image"/><div className="catalog-skeleton__line"/>
+              <div className="catalog-skeleton__line catalog-skeleton__line--short"/>
+              <div className="catalog-skeleton__line"/>
+            </div>)}
+          </div>
+        </div>
+      ) : current.error || !current.data ? (
         <div className="catalog-feedback" role="alert">
           <h2>No se pudo consultar el catálogo</h2>
-          <p>Comprueba la API e inténtalo nuevamente; los filtros se conservan.</p>
+          <p>Revisa la conexión y vuelve a intentarlo. En el plan gratuito,
+            la API puede tardar en reactivarse. Tus filtros se conservan.</p>
           <button type="button" className="catalog-button"
             onClick={()=>{setResult(null);setRetry(n=>n+1);}}>Reintentar</button>
         </div>
       ) : (
         <>
           <div className="catalog-toolbar">
-            <p role="status">{current.data.totalElements} producto
+            <p role="status" aria-live="polite"><strong>{current.data.totalElements}</strong> producto
               {current.data.totalElements===1?"":"s"} coincidente
               {current.data.totalElements===1?"":"s"}</p>
             {current.data.totalPages>0 && <span>
