@@ -73,6 +73,9 @@ public class ApiSecurityConfig {
                             .hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/orders/*/payment-attempts/*")
                             .hasRole("CLIENT")
+                        // BKL-051: solo el listado de reseñas es público.
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/products/*")
+                            .permitAll()
                         // BKL-050: reseñas solo para propietario CLIENT con entrega real.
                         .requestMatchers(HttpMethod.GET,
                                 "/api/reviews/products/*/eligibility",
