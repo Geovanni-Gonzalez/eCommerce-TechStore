@@ -17,6 +17,7 @@ function DateText({value}:{value:string}) {
 export default function AdminOrdersPanel({token}:{token:string}) {
   const {getToken,logout}=useAuth();
   const [cursorStack,setCursorStack]=useState<Array<number|null>>([null]);
+  const [lookup,setLookup]=useState("");
   const [data,setData]=useState<{cursor:number|null;page:AdminOrdersPage}|null>(null);
   const [selectedId,setSelectedId]=useState<number|null>(null);
   const [selected,setSelected]=useState<{id:number;detail:AdminOrderDetail;history:OrderHistory[]}|null>(null);
@@ -100,6 +101,25 @@ export default function AdminOrdersPanel({token}:{token:string}) {
           <button className="admin-secondary" type="button"
             disabled={busy} onClick={reload}>Actualizar pedidos</button>
         </div>
+        <form className="admin-actions" aria-label="Buscar pedido por identificador"
+          onSubmit={event=>{
+            event.preventDefault();
+            const trimmed=lookup.trim();
+            if(!/^[1-9][0-9]*$/.test(trimmed)||!Number.isSafeInteger(Number(trimmed))){
+              setError("Introduce un ID de pedido entero positivo.");
+              return;
+            }
+            setError("");setNotice("");setConfirmId(null);
+            setDetailError("");setSelected(null);setSelectedId(Number(trimmed));
+          }}>
+          <label htmlFor="admin-order-lookup">Consultar pedido por ID</label>
+          <input id="admin-order-lookup" className="admin-short-input" inputMode="numeric"
+            placeholder="Ej. 102" value={lookup} maxLength={16}
+            disabled={busy} onChange={event=>setLookup(event.target.value)}/>
+          <button className="admin-secondary" type="submit" disabled={busy}>
+            Buscar pedido
+          </button>
+        </form>
         {error&&<p className="admin-error" role="alert">{error}</p>}
         {notice&&<p className="admin-success" role="status">{notice}</p>}
         {!page?<p role="status">Cargando pedidos…</p>:page.items.length===0
@@ -160,6 +180,15 @@ export default function AdminOrdersPanel({token}:{token:string}) {
             <strong> Pago:</strong> {current.detail.order.paymentMode}</p>
           <p><strong>Total confirmado por el servidor:</strong> {
             formatCatalogCrc(current.detail.order.totals.totalCrc)}</p>
+          <h3>Dirección de entrega registrada</h3>
+          <address className="admin-shipping-address">
+            <strong>{current.detail.order.shippingAddress.recipientName}</strong>
+            <span>{current.detail.order.shippingAddress.phone}</span>
+            <span>{current.detail.order.shippingAddress.province},{" "}
+              {current.detail.order.shippingAddress.canton},{" "}
+              {current.detail.order.shippingAddress.district}</span>
+            <span>{current.detail.order.shippingAddress.details}</span>
+          </address>
           <h3>Artículos del pedido</h3>
           <ul className="admin-order-lines">
             {current.detail.order.items.map((item,i)=>(

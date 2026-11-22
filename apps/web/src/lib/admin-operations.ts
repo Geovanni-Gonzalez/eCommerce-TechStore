@@ -3,6 +3,7 @@
  * Bearer en memoria, no URL, cookies, localStorage ni sessionStorage.
  */
 import {isSafeApiOrigin} from "./payment-result";
+import type {ShippingAddress} from "./shipping-address";
 
 const BASE=(process.env.NEXT_PUBLIC_API_URL??"http://localhost:8080").replace(/\/$/,"");
 const integer=(v:unknown):v is number=>typeof v==="number"&&Number.isSafeInteger(v);
@@ -51,7 +52,9 @@ export type OrderOverview={
 export type AdminOrderRow={ownerUserId:number;order:OrderOverview};
 export type AdminOrdersPage={items:AdminOrderRow[];hasMore:boolean;nextBeforeId:number|null};
 export type OrderLine={productId:number;name:string;quantity:number;unitPriceCrc:number;lineTotalCrc:number};
-export type AdminOrderDetail={ownerUserId:number;order:OrderOverview&{items:OrderLine[]}};
+export type AdminOrderDetail={ownerUserId:number;order:OrderOverview&{
+  items:OrderLine[];shippingAddress:ShippingAddress;
+}};
 export type OrderHistory={
   id:number;orderId:number;fromStatus:OrderStatus|null;toStatus:OrderStatus;
   actorType:string;actorId:number|null;reason:string;changedAt:string;
@@ -85,6 +88,22 @@ export async function adminListOrders(token:string,beforeId:number|null,signal?:
   return {items:o.items.map(row),hasMore:o.hasMore,
     nextBeforeId:o.nextBeforeId as number|null} satisfies AdminOrdersPage;
 }
+/** Shipping snapshot from a verified ADMIN endpoint; never persisted client-side. */
+function shippingSnapshot(value:unknown):ShippingAddress {
+  const o=object(value);
+  const bounds:Record<keyof ShippingAddress,number>={
+    province:80,canton:80,district:80,details:300,
+    recipientName:120,phone:24,
+  };
+  const out={} as ShippingAddress;
+  for(const key of Object.keys(bounds) as Array<keyof ShippingAddress>){
+    const v=o[key];
+    if(!nonEmpty(v)||v.length>bounds[key]||/[\x00-\x1f\x7f]/.test(v))
+      throw new Error("Dirección histórica inválida en respuesta ADMIN.");
+    out[key]=v;
+  }
+  return out;
+}
 export async function adminOrderDetail(token:string,id:number,signal?:AbortSignal) {
   if(!positive(id))throw new Error("ID inválido.");
   const o=object(await call(token,"GET","/api/admin/orders/"+id,{signal}));
@@ -100,7 +119,9 @@ export async function adminOrderDetail(token:string,id:number,signal?:AbortSigna
     return {productId:x.productId,name:x.name,quantity:x.quantity,
       unitPriceCrc:x.unitPriceCrc,lineTotalCrc:x.lineTotalCrc};
   });
-  return {ownerUserId:o.ownerUserId,order:{...base,items}} satisfies AdminOrderDetail;
+  return {ownerUserId:o.ownerUserId,order:{
+    ...base,items,shippingAddress:shippingSnapshot(d.shippingAddress),
+  }} satisfies AdminOrderDetail;
 }
 export async function adminOrderHistory(token:string,id:number,signal?:AbortSignal) {
   const value=await call(token,"GET","/api/admin/orders/"+id+"/history",{signal});
