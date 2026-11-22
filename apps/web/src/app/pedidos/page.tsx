@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import OrdersClient from "./OrdersClient";
+import "./orders.css";
 
 export const metadata: Metadata = {
   title: "Mis pedidos | TechStore",

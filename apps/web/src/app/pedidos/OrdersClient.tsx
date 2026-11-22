@@ -3,7 +3,8 @@
 import Link from "next/link";
 import ShippingTrackingPanel from "./ShippingTrackingPanel";
 import OrderNotificationsPanel from "./OrderNotificationsPanel";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {filterLoadedOrders, loadedOrderCounts, type OrdersViewFilter} from "@/lib/order-list-view";
 import { isSafeApiOrigin } from "@/lib/payment-result";
 import {
   ACTOR_COPY, REASON_COPY, STATUS_COPY, formatCrc, formatOrderDate,
@@ -84,37 +85,42 @@ function DetailView({
   const address = order.shippingAddress;
   return (
     <article className="orders-detail" aria-labelledby="order-detail-heading">
+
       <div className="orders-detail__head">
         <div>
-          <p className="eyebrow">Detalle histórico</p>
+          <p className="eyebrow">Detalle de tu compra</p>
           <h2 id="order-detail-heading">Pedido #{order.id}</h2>
         </div>
         <StatusTag status={order.status} />
       </div>
-      <p>{STATUS_COPY[order.status].description}</p>
-      <p className="orders-muted">Creado: {formatOrderDate(order.createdAt)}</p>
+      <p className="orders-detail__status-copy">{STATUS_COPY[order.status].description}</p>
+      <div className="orders-detail__facts">
+        <div>
+          <span className="orders-detail__fact-label">Fecha del pedido</span>
+          <strong>{formatOrderDate(order.createdAt)}</strong>
+        </div>
+        <div>
+          <span className="orders-detail__fact-label">Importe registrado</span>
+          <strong>{formatCrc(order.totals.totalCrc)}</strong>
+        </div>
+      </div>
 
       <h3>Productos del pedido</h3>
-      <div className="orders-table-scroll">
-        <table className="orders-table">
-          <thead><tr>
-            <th scope="col">Producto</th>
-            <th scope="col">Cantidad</th>
-            <th scope="col">Precio unitario</th>
-            <th scope="col">Subtotal</th>
-          </tr></thead>
-          <tbody>
-            {order.items.map((item, i) => (
-              <tr key={item.productId + "-" + i}>
-                <th scope="row">{item.name}</th>
-                <td>{item.quantity}</td>
-                <td>{formatCrc(item.unitPriceCrc)}</td>
-                <td>{formatCrc(item.lineTotalCrc)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <p className="orders-muted orders-detail__section-help">
+        Artículos y precios históricos de esta compra.
+      </p>
+      <ul className="orders-products">
+        {order.items.map((item, i) => (
+          <li key={item.productId + "-" + i} className="orders-product">
+            <span className="orders-product__icon" aria-hidden="true">▣</span>
+            <div className="orders-product__main">
+              <strong>{item.name}</strong>
+              <span className="orders-muted">Cantidad: {item.quantity} · Precio unitario: {formatCrc(item.unitPriceCrc)}</span>
+            </div>
+            <strong className="orders-product__amount">{formatCrc(item.lineTotalCrc)}</strong>
+          </li>
+        ))}
+      </ul>
 
       <h3>Resumen del pedido</h3>
       <dl className="orders-totals">
@@ -137,6 +143,7 @@ function DetailView({
       <OrderNotificationsPanel orderId={order.id} getToken={getToken} />
       <ShippingTrackingPanel orderId={order.id} getToken={getToken} />
       <h3>Historial de estados</h3>
+      <p className="orders-muted orders-detail__section-help">Así ha cambiado el estado del pedido, según la API.</p>
       {history.length === 0 ? (
         <p className="orders-muted">
           Todavía no existen cambios de estado registrados en este pedido.
@@ -186,6 +193,9 @@ export default function OrdersClient() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [timeline, setTimeline] = useState<OrderHistoryEntry[]>([]);
+  const [statusFilter, setStatusFilter] = useState<OrdersViewFilter>("ALL");
+  const [orderSearch, setOrderSearch] = useState("");
+  const detailSectionRef = useRef<HTMLElement>(null);
 
   // Token exclusivamente en memoria. Nunca pasar a URL, cookies o storage.
   const session = useRef<string | null>(null);
@@ -202,6 +212,8 @@ export default function OrdersClient() {
     setSelectedId(null);
     setDetail(null);
     setTimeline([]);
+    setStatusFilter("ALL");
+    setOrderSearch("");
     setListBusy(false);
     setDetailBusy(false);
     setDetailError("");
@@ -351,6 +363,17 @@ export default function OrdersClient() {
     }
   }
 
+  // Al abrir un pedido en móvil, llevar el detalle a la vista sin ocultar
+  // contenido por el encabezado sticky. Se respeta reducir movimiento.
+  useEffect(() => {
+    if (!detail || detailBusy || typeof window === "undefined" ||
+        !window.matchMedia("(max-width: 860px)").matches) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    detailSectionRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth", block: "start",
+    });
+  }, [detail, detailBusy]);
+
   function loadMore() {
     if (!listBusy && session.current && page.hasMore
         && page.nextBeforeId !== null) {
@@ -365,6 +388,10 @@ export default function OrdersClient() {
       if (selectedId !== null) void selectOrder(selectedId);
     }
   }
+
+  const counts = loadedOrderCounts(page.items);
+  const filteredOrders = filterLoadedOrders(page.items, statusFilter, orderSearch);
+  const hasActiveFilter = statusFilter !== "ALL" || orderSearch.trim().length > 0;
 
   return (
     <section className="orders-page" aria-labelledby="orders-heading">
@@ -381,7 +408,11 @@ export default function OrdersClient() {
             bancarios ni acreditan cargos reales.
           </p>
         </div>
-        <div className="orders-intro__mark" aria-hidden="true">01 / 03</div>
+        <div className="orders-intro__graphic" aria-hidden="true">
+          <span>TECHSTORE / ÓRDENES</span>
+          <strong>Tu historial, en orden.</strong>
+          <span className="orders-intro__graphic-line"/>
+        </div>
       </div>
 
       {phase !== "ready" ? (
@@ -389,9 +420,8 @@ export default function OrdersClient() {
           <p className="eyebrow">Acceso privado</p>
           <h2 id="orders-auth-heading">Consulta solo tus compras</h2>
           <p>
-            Identifícate con tu cuenta CLIENT. Hasta que BKL-017 integre
-            el acceso general, esta consulta utiliza una sesión puntual
-            que permanece solo en memoria.
+            Ingresa con tu cuenta de cliente para consultar tus compras
+            y sus movimientos. Esta vista utiliza un acceso privado temporal.
           </p>
           <form className="orders-access__form" onSubmit={event => {
             event.preventDefault();
@@ -416,10 +446,18 @@ export default function OrdersClient() {
             )}
             {authError && <p className="orders-error" role="alert">{authError}</p>}
           </form>
-          <p className="orders-muted">
-            No se guarda la contraseña ni el token en la URL o en
-            localStorage/sessionStorage.
+          <p className="orders-muted orders-access__privacy">
+            Tu contraseña y tu token no se guardan en la URL ni en
+            el almacenamiento del navegador.
           </p>
+          <div className="orders-access__benefits" aria-label="Qué puedes consultar">
+            <div><span aria-hidden="true">01</span><strong>Tu historial</strong>
+              <p>Revisa pedidos recientes y anteriores desde una misma vista.</p></div>
+            <div><span aria-hidden="true">02</span><strong>Detalles y totales</strong>
+              <p>Consulta los artículos y los importes que registró el servidor.</p></div>
+            <div><span aria-hidden="true">03</span><strong>Estados y seguimiento</strong>
+              <p>Revisa los eventos de la simulación, sin cobros ni entregas reales.</p></div>
+          </div>
         </section>
       ) : (
         <>
@@ -439,11 +477,65 @@ export default function OrdersClient() {
             </div>
           </div>
 
+          <div className="orders-overview" aria-label="Resumen de los pedidos cargados">
+            <div className="orders-overview__item">
+              <span>Pedidos cargados</span><strong>{counts.loaded}</strong>
+            </div>
+            <div className="orders-overview__item orders-overview__item--pending">
+              <span>Pendientes</span><strong>{counts.pending}</strong>
+            </div>
+            <div className="orders-overview__item orders-overview__item--confirmed">
+              <span>Confirmados</span><strong>{counts.confirmed}</strong>
+            </div>
+            <div className="orders-overview__item orders-overview__item--cancelled">
+              <span>Cancelados</span><strong>{counts.cancelled}</strong>
+            </div>
+          </div>
+          <p className="orders-loaded-note">
+            Resumen de los pedidos ya cargados. Puedes consultar más páginas si existen.
+          </p>
+
           <div className="orders-layout">
             <section aria-labelledby="orders-list-heading" className="orders-list">
               <div className="orders-section-heading">
                 <h2 id="orders-list-heading">Pedidos registrados</h2>
                 <span className="orders-muted">Más recientes primero</span>
+              </div>
+              <div className="orders-controls">
+                <div className="orders-filters" role="group" aria-label="Filtrar pedidos por estado">
+                  {([
+                    ["ALL", "Todos", counts.loaded],
+                    ["PENDING", "Pendientes", counts.pending],
+                    ["CONFIRMED", "Confirmados", counts.confirmed],
+                    ["CANCELLED", "Cancelados", counts.cancelled],
+                  ] as const).map(([key, label, count]) => (
+                    <button key={key} type="button"
+                      className={"orders-filter" + (statusFilter === key ? " orders-filter--active" : "")}
+                      aria-pressed={statusFilter === key}
+                      onClick={() => setStatusFilter(key)}>
+                      {label} <span aria-hidden="true">{count}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="orders-search">
+                  <label htmlFor="orders-search-input">Buscar número de pedido</label>
+                  <input id="orders-search-input" type="search" inputMode="numeric"
+                    placeholder="Ej. #123" maxLength={20}
+                    value={orderSearch} onChange={event => setOrderSearch(event.target.value)}
+                    aria-describedby="orders-search-hint" />
+                  <p id="orders-search-hint">Busca únicamente entre los pedidos cargados.</p>
+                </div>
+                <div className="orders-filter-footer">
+                  <p className="orders-filter-result" role="status" aria-live="polite">
+                    {filteredOrders.length} de {counts.loaded} pedidos cargados visibles
+                  </p>
+                  {hasActiveFilter && (
+                    <button type="button" className="orders-filter-clear"
+                      onClick={() => {setStatusFilter("ALL");setOrderSearch("");}}>
+                      Limpiar filtros
+                    </button>
+                  )}
+                </div>
               </div>
               {listError && <p role="alert" className="orders-error">{listError}</p>}
               {listBusy && <p role="status">Cargando pedidos…</p>}
@@ -454,9 +546,19 @@ export default function OrdersClient() {
                   <Link href="/productos">Explorar productos</Link>
                 </div>
               )}
-              {page.items.length > 0 && (
+              {page.items.length > 0 && filteredOrders.length === 0 && (
+                <div className="orders-empty orders-empty--filtered">
+                  <h3>No encontramos coincidencias</h3>
+                  <p>Prueba otro número o cambia el filtro. Si hay más páginas, también puedes cargarlas.</p>
+                  <button type="button" className="orders-button orders-button--outline"
+                    onClick={() => {setStatusFilter("ALL"); setOrderSearch("");}}>
+                    Quitar filtros
+                  </button>
+                </div>
+              )}
+              {filteredOrders.length > 0 && (
                 <ol className="orders-cards">
-                  {page.items.map((order: OrderSummary) => (
+                  {filteredOrders.map((order: OrderSummary) => (
                     <li key={order.id}>
                       <button
                         type="button"
@@ -471,11 +573,14 @@ export default function OrdersClient() {
                           <StatusTag status={order.status} />
                         </span>
                         <span className="orders-card__date">
-                          {formatOrderDate(order.createdAt)}
+                          <span aria-hidden="true">◷</span> {formatOrderDate(order.createdAt)}
                         </span>
                         <span className="orders-card__bottom">
-                          <strong>{formatCrc(order.totals.totalCrc)}</strong>
-                          <span className="orders-card__cta">Ver detalle →</span>
+                          <span className="orders-card__total">
+                            <small>Total del pedido</small>
+                            <strong>{formatCrc(order.totals.totalCrc)}</strong>
+                          </span>
+                          <span className="orders-card__cta">Ver detalle <span aria-hidden="true">→</span></span>
                         </span>
                       </button>
                     </li>
@@ -494,12 +599,13 @@ export default function OrdersClient() {
               )}
             </section>
 
-            <section className="orders-detail-container" aria-label="Detalle del pedido">
+            <section ref={detailSectionRef} className="orders-detail-container"
+              aria-label="Detalle del pedido">
               {selectedId === null && (
                 <div className="orders-placeholder">
                   <div className="orders-placeholder__icon" aria-hidden="true">≡</div>
                   <h2>Selecciona un pedido</h2>
-                  <p>Verás sus productos, totales, entrega y cambios de estado.</p>
+                  <p>Selecciona un pedido del historial para ver sus artículos, importes, entrega y cambios de estado.</p>
                 </div>
               )}
               {selectedId !== null && detailBusy && (
@@ -526,7 +632,7 @@ export default function OrdersClient() {
       )}
 
       <p className="orders-bottom-link">
-        <Link href="/">Volver al inicio de TechStore</Link>
+        <Link href="/productos">← Seguir explorando productos</Link>
       </p>
     </section>
   );

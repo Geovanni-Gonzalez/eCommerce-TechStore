@@ -4,6 +4,7 @@ import {
   parseOrderSummary, parseOrderPage, parseOrderDetail, parseOrderHistory,
   isOrderId, STATUS_COPY, REASON_COPY, formatCrc, formatOrderDate,
 } from "./order-history.ts";
+import {filterLoadedOrders, loadedOrderCounts} from "./order-list-view.ts";
 
 const totals = { subtotalCrc: 1250, shippingCrc: 2500, taxCrc: 162.5, totalCrc: 3912.5 };
 const summary = (id=15, status="PENDING") => ({
@@ -107,4 +108,28 @@ test("BKL-043 rechaza identificadores inseguros y fechas inválidas", () => {
   assert.throws(()=>parseOrderSummary({...summary(),createdAt:"ayer"}));
   assert.ok(formatOrderDate("2026-11-21T18:00:00Z").length > 6);
   assert.match(formatCrc(1500.25),/1[.,]500|1\s500/);
+});
+
+test("Mis pedidos: los indicadores cuentan solo las filas cargadas", () => {
+  const list=[summary(31,"PENDING"),summary(25,"CONFIRMED"),
+    summary(17,"CANCELLED"),summary(8,"PENDING")];
+  assert.deepEqual(loadedOrderCounts(list),{
+    loaded:4,pending:2,confirmed:1,cancelled:1,
+  });
+  assert.deepEqual(loadedOrderCounts([]),{
+    loaded:0,pending:0,confirmed:0,cancelled:0,
+  });
+});
+
+test("Mis pedidos: filtros y busqueda son locales, combinables y no mutan el historial", () => {
+  const list=[summary(531,"PENDING"),summary(310,"CONFIRMED"),
+    summary(105,"PENDING"),summary(23,"CANCELLED")];
+  const original=list.map(row=>row.id);
+  assert.deepEqual(filterLoadedOrders(list,"ALL","").map(o=>o.id),original);
+  assert.deepEqual(filterLoadedOrders(list,"PENDING","").map(o=>o.id),[531,105]);
+  assert.deepEqual(filterLoadedOrders(list,"CONFIRMED","#310").map(o=>o.id),[310]);
+  assert.deepEqual(filterLoadedOrders(list,"PENDING","  # 1 ").map(o=>o.id),[531,105]);
+  assert.deepEqual(filterLoadedOrders(list,"ALL","abc"),[]);
+  assert.deepEqual(filterLoadedOrders(list,"ALL","99999999999"),[]);
+  assert.deepEqual(list.map(row=>row.id),original);
 });

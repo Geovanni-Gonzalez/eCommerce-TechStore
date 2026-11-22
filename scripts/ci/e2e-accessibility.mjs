@@ -17,6 +17,7 @@ try {
       {path:"/productos",heading:"Explora nuestros productos"},
       {path:"/login",heading:"Iniciar sesión"},
       {path:"/registro",heading:"Crear cuenta"},
+      {path:"/pedidos",heading:"Mis pedidos"},
     ]) {
       await page.goto(origin+target.path);
       await page.getByRole("heading",{name:target.heading,level:1}).waitFor();
@@ -52,6 +53,12 @@ try {
     await page.getByLabel("Marca").waitFor();
     await page.getByRole("button",{name:"Aplicar filtros"}).waitFor();
     await page.goto(origin+"/login");
+    await page.getByLabel("Correo electrónico").waitFor();
+    await page.getByLabel("Contraseña").waitFor();
+
+    await page.goto(origin+"/pedidos");
+    await page.getByRole("heading",{name:"Consulta solo tus compras"}).waitFor();
+    await page.getByRole("button",{name:"Consultar mis pedidos"}).waitFor();
     await page.getByLabel("Correo electrónico").waitFor();
     await page.getByLabel("Contraseña").waitFor();
   }
