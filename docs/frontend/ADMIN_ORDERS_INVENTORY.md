@@ -76,3 +76,15 @@ transaccionales de inventario.
   concurrente; paginación; ajustes positivos/negativos; stock insuficiente;
   auditoría, requests repetidos y pérdida de respuesta; accesibilidad
   por teclado y diseño móvil.
+
+## Mejoras de seguimiento del panel (PR posterior a #109)
+
+- El administrador puede consultar directamente un pedido por ID aunque esté fuera
+  de la página actual. El dato se solicita a la API protegida; no se realizan
+  búsquedas por nombres o correos personales.
+- El detalle muestra la dirección histórica de entrega que devolvió el backend;
+  solo se presenta durante la sesión ADMIN, nunca se persiste en el navegador.
+- El inventario muestra nombre y SKU de productos al consultar paralelamente
+  la página correspondiente del catálogo administrativo; el vínculo se hace por ID,
+  no por orden de las filas. Si el catálogo no responde, conserva los saldos y
+  muestra los identificadores sin inventar nombres.

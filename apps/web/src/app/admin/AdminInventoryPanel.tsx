@@ -2,6 +2,7 @@
 
 import {useEffect,useRef,useState,type FormEvent} from "react";
 import {useAuth} from "@/components/AuthProvider";
+import {listAdminProducts,type AdminProduct} from "@/lib/admin-catalog";
 import {
   AdminOperationError,adminAdjustInventory,adminGetInventory,
   adminInventoryMovements,adminListInventory,
@@ -23,6 +24,8 @@ export default function AdminInventoryPanel({token}:{token:string}) {
   const [page,setPage]=useState(0);
   const [refresh,setRefresh]=useState(0);
   const [listing,setListing]=useState<{page:number;data:InventoryPage}|null>(null);
+  const [catalogLabels,setCatalogLabels]=useState<Record<number,Pick<AdminProduct,"name"|"sku">>>({});
+  const [catalogLabelNote,setCatalogLabelNote]=useState("");
   const [selectedId,setSelectedId]=useState<number|null>(null);
   const [balance,setBalance]=useState<InventoryBalance|null>(null);
   const [movementPage,setMovementPage]=useState(0);
@@ -48,6 +51,21 @@ export default function AdminInventoryPanel({token}:{token:string}) {
     });
     return ()=>controller.abort();
   },[token,page,refresh,logout]);
+
+  useEffect(()=>{
+    const controller=new AbortController();
+    void listAdminProducts(token,page,controller.signal).then(data=>{
+      if(controller.signal.aborted)return;
+      const labels:Record<number,Pick<AdminProduct,"name"|"sku">>={};
+      data.items.forEach(item=>{labels[item.id]={name:item.name,sku:item.sku};});
+      setCatalogLabels(previous=>({...previous,...labels}));
+      setCatalogLabelNote("");
+    }).catch(()=>{
+      if(!controller.signal.aborted)
+        setCatalogLabelNote("No se pudieron cargar los nombres; se muestran los IDs.");
+    });
+    return ()=>controller.abort();
+  },[token,page,refresh]);
 
   useEffect(()=>{
     if(selectedId===null)return;
@@ -140,6 +158,7 @@ export default function AdminInventoryPanel({token}:{token:string}) {
       </div>
       {error&&<p className="admin-error" role="alert">{error}</p>}
       {notice&&<p className="admin-success" role="status">{notice}</p>}
+      {catalogLabelNote&&<p className="admin-note" role="status">{catalogLabelNote}</p>}
       {!list?<p role="status">Cargando inventario…</p>:list.items.length===0
         ?<p>Sin productos en esta página.</p>:(
         <div className="admin-table-scroller">
@@ -149,7 +168,9 @@ export default function AdminInventoryPanel({token}:{token:string}) {
               <th scope="col">Acción</th></tr></thead>
             <tbody>{list.items.map(item=>(
               <tr key={item.productId}>
-                <td>#{item.productId}</td>
+                <td><strong>{catalogLabels[item.productId]?.name??"Producto #"+item.productId}</strong>
+                  <small>#{item.productId}{catalogLabels[item.productId]
+                    ?" · SKU: "+catalogLabels[item.productId].sku:""}</small></td>
                 <td>{item.physicalStock}</td><td>{item.reservedStock}</td>
                 <td>{item.availableStock}</td>
                 <td><button className="admin-secondary" type="button"
@@ -174,7 +195,12 @@ export default function AdminInventoryPanel({token}:{token:string}) {
       aria-labelledby="admin-inventory-detail-heading">
       <div className="admin-section-heading">
         <div>
-          <h2 id="admin-inventory-detail-heading">Producto #{selectedId}</h2>
+          <h2 id="admin-inventory-detail-heading">
+            {catalogLabels[selectedId]?.name??"Producto #"+selectedId}
+          </h2>
+          {catalogLabels[selectedId]&&<p className="admin-note">
+            SKU: {catalogLabels[selectedId].sku} · Producto #{selectedId}
+          </p>}
           {selectedBalance&&<p>
             Físico <strong>{selectedBalance.physicalStock}</strong> ·
             Reservado <strong>{selectedBalance.reservedStock}</strong> ·
