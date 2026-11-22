@@ -267,6 +267,52 @@ class OrderQueryHttpIT {
                 .andExpect(status().isNotFound());
     }
 
+
+    @Test
+    void bkl049VerticalAndHorizontalAccessToShippingAndReviewsFailsClosed()
+            throws Exception {
+        long aliceOrder = createOrder(aliceId).id();
+        long bobOrder = createOrder(bobId).id();
+
+        // El seguimiento del pedido ajeno es indistinguible del inexistente.
+        for (String target : new String[]{
+                "/api/orders/" + bobOrder + "/shipping",
+                "/api/orders/999999999/shipping"
+        }) {
+            mvc.perform(get(target).header("Authorization", bearer(alice)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(header().string("Cache-Control", "no-store"));
+        }
+        mvc.perform(get("/api/orders/" + aliceOrder + "/shipping")
+                .header("Authorization", bearer(alice)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"));
+        mvc.perform(get("/api/orders/" + aliceOrder + "/shipping"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/orders/" + aliceOrder + "/shipping")
+                .header("Authorization", bearer(admin)))
+                .andExpect(status().isForbidden());
+
+        // Un administrador no puede aprovechar el endpoint CLIENT de reseñas.
+        String eligibility = "/api/reviews/products/" + productId + "/eligibility";
+        String review = "/api/reviews/products/" + productId;
+        mvc.perform(get(eligibility)).andExpect(status().isUnauthorized());
+        mvc.perform(get(eligibility).header("Authorization", bearer(admin)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post(review).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"rating\":5,\"comment\":\"Excelente producto\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post(review).contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", bearer(admin))
+                .content("{\"rating\":5,\"comment\":\"Excelente producto\"}"))
+                .andExpect(status().isForbidden());
+
+        // El listado público no incorpora el acceso privado del cliente.
+        mvc.perform(get(review))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
     private Order createOrder(long userId) {
         carts.ensureCart(userId);
         assertTrue(carts.incrementProduct(userId, productId, 1));
