@@ -18,7 +18,10 @@ export default function ShippingTrackingPanel({
     const controller=new AbortController();
     const token=getToken();
     if(!token) {
-      setError("Sesión no disponible para consultar el seguimiento.");
+      void Promise.resolve().then(()=>{
+        if(!controller.signal.aborted)
+          setError("Sesión no disponible para consultar el seguimiento.");
+      });
       return ()=>controller.abort();
     }
     void getCustomerShippingTracking(token,orderId,controller.signal).then(data=>{
