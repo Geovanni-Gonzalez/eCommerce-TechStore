@@ -72,6 +72,9 @@ jobs:
       - name: Probar cotización y checkout visual BKL-034
         run: node --experimental-strip-types --test apps/web/src/lib/checkout-ui.test.mjs
 
+      - name: Verificar harness seguro de pruebas de carga BKL-057
+        run: python3 -m unittest scripts.qa.test_load_catalog_cart
+
       - name: Compilar frontend de producción
         run: npm run build:web
 
