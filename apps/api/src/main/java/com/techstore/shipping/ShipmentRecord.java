@@ -16,8 +16,9 @@ public record ShipmentRecord(
         if (id < 1 || orderId < 1 || openedByUserId < 1) {
             throw new IllegalArgumentException("Identificador logístico no válido");
         }
-        if (!"MANUAL".equals(fulfillmentMethod)) {
-            throw new IllegalArgumentException("Solo se permite despacho manual");
+        if (!"MANUAL".equals(fulfillmentMethod)
+                && !"SIMULATOR".equals(fulfillmentMethod)) {
+            throw new IllegalArgumentException("Método logístico desconocido");
         }
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(registeredAt, "registeredAt");

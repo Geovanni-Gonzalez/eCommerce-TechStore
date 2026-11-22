@@ -14,6 +14,13 @@ public final class ManualShippingGateway implements ShippingGateway {
     }
 
     @Override
+    public void verifyExisting(ShipmentRecord shipment) {
+        Objects.requireNonNull(shipment);
+        if (!"MANUAL".equals(shipment.fulfillmentMethod()))
+            throw new ShippingProviderConflictException();
+    }
+
+    @Override
     public ShipmentRecord advance(ShippingTransitionCommand command) {
         Objects.requireNonNull(command, "command");
         return shipments.advanceManual(command);
