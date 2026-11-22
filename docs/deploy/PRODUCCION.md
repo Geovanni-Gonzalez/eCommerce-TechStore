@@ -65,3 +65,18 @@ Comprobar manualmente una ruta de catálogo y que el frontend no llama a `localh
 ## 5. CI/CD y release
 
 `.github/workflows/ci.yml` ejecuta lint, tipos, contrato, build y pruebas de backend/Playwright; exigir su éxito antes de fusionar una rama de release. Vercel está vinculado a GitHub para desplegar desde Git. El backend debe configurarse con despliegues desde una rama de release revisada, usando secretos guardados en el proveedor. Para evitar interrupciones, coordinar migraciones, test de salud, smoke funcional y rollback. El contenedor presentado aquí está **preparado**, no demuestra aún un backend publicado.
+
+## 6. Blueprint Render para demostración
+
+El archivo `render.yaml` del repositorio declara **dos recursos nuevos**, ambos gratuitos, en la región `virginia`:
+
+- `techstore-api-demo`: servicio web Docker desde `apps/api/Dockerfile`, `/actuator/health` como health check.
+- `techstore-postgres-demo`: PostgreSQL 17 de demostración `techstore_demo`, acceso externo desactivado mediante `ipAllowList: []`.
+
+La API toma `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` y `SPRING_DATASOURCE_PASSWORD` directamente de `fromDatabase`: **no crear contraseñas en GitHub**. La configuración Spring mantiene compatibilidad con `DB_URL` para entornos existentes.
+
+**El Blueprint no se aplica automáticamente por estar en GitHub.** Debe validarse el YAML, planificarse en Render, revisar el plan y aprobar la creación en el espacio de trabajo correcto; hacerlo crea recursos externos. No fusionar con `dev` sin CI y revisión. Antes de desplegar desde `dev`, cambiar la rama de Blueprint del borrador a `dev` una vez fusionado.
+
+**Limitaciones del plan gratuito**: Render suspende el web service tras 15 minutos sin tráfico (arranque en frío); PostgreSQL gratuito expira a los 30 días, tiene 1 GB de almacenamiento y **no incluye copias de seguridad**. Es apto solo para un prototipo académico con datos ficticios, nunca para pedidos o credenciales reales. Render también puede facturar uso extra de ancho de banda/minutos de compilación si hay un método de pago configurado. Revisar los límites en https://render.com/docs/free antes de aprobar.
+
+Tras desplegar la API, asignar su URL HTTPS **real** a `NEXT_PUBLIC_API_URL` en Vercel para producción y vistas previas necesarias, y volver a compilar Next.js. Verificar el dominio de frontend exacto contra `CORS_ALLOWED_ORIGINS`; no ampliar CORS a `*`.
