@@ -307,3 +307,12 @@
 @media (prefers-reduced-motion: reduce) {
   .orders-page .orders-card { transition: none; }
 }
+
+
+.orders-filter-footer { display: flex; gap: .5rem; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; }
+.orders-filter-clear { border: 0; background: transparent; cursor: pointer;
+  padding: .35rem .2rem; font: inherit; font-weight: 750; font-size: .79rem;
+  color: #1d59a0; text-decoration: underline; text-underline-offset: 3px; }
+.orders-filter-clear:hover { color: #123d76; }
+.orders-filter-clear:focus-visible { outline: 3px solid #c65c0b; outline-offset: 3px; }
