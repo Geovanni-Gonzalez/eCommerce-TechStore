@@ -73,6 +73,12 @@ public class ApiSecurityConfig {
                             .hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/orders/*/payment-attempts/*")
                             .hasRole("CLIENT")
+                        // BKL-050: reseñas solo para propietario CLIENT con entrega real.
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/reviews/products/*/eligibility",
+                                "/api/reviews/products/*/mine").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/products/*")
+                            .hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/checkout/quote").hasRole("CLIENT")
                         .requestMatchers("/api/cart", "/api/cart/**").hasRole("CLIENT")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -68,7 +68,7 @@ export function validateContract(doc) {
     }
   }
 
-  assert.equal(operationCount, 49, "Se esperan 49 operaciones de API");
+  assert.equal(operationCount, 52, "Se esperan 52 operaciones de API");
   assert.equal(doc.paths["/api/auth/register"].post["x-implementation-status"], "implemented",
     "El registro seguro debe estar marcado como implementado");
   for (const [path, method] of [
@@ -303,6 +303,25 @@ export function validateContract(doc) {
     && reasons.includes("SIMULATOR_DISPATCH")
     && reasons.includes("SIMULATOR_DELIVERY"),
     "BKL-052: la auditoría diferencia eventos de simulación");
+  // BKL-050: no permitir reseñas tras una entrega ficticia.
+  const eligibility = doc.paths["/api/reviews/products/{productId}/eligibility"]?.get;
+  const ownReview = doc.paths["/api/reviews/products/{productId}/mine"]?.get;
+  const createReview = doc.paths["/api/reviews/products/{productId}"]?.post;
+  for (const endpoint of [eligibility, ownReview, createReview]) {
+    assert.deepEqual(endpoint?.security, [{ bearerAuth: [] }],
+      "BKL-050: reseñas siempre requieren token CLIENT");
+    assert.equal(endpoint?.["x-implementation-status"], "implemented",
+      "BKL-050: endpoint no implementado");
+  }
+  assert.equal(createReview?.requestBody?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/CreateProductReview", "BKL-050: entrada controlada");
+  assert.deepEqual(doc.components.schemas.CreateProductReview.required,
+    ["rating","comment"], "BKL-050: no aceptar identidad ni pedido");
+  assert.ok(!("userId" in doc.components.schemas.CreateProductReview.properties),
+    "BKL-050: no aceptar userId");
+  assert.deepEqual(doc.components.schemas.ReviewEligibility.properties.reason.enum,
+    ["ELIGIBLE","NOT_DELIVERED","ALREADY_REVIEWED"],
+    "BKL-050: estados de elegibilidad acotados");
   assert.equal(proposedCount, 0, "BKL-042: ya no quedan rutas pendientes");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",

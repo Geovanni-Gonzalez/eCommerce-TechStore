@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 49);
+  assert.equal(result.operationCount, 52);
   assert.equal(result.proposedCount, 0);
 });
 
@@ -272,4 +272,17 @@ test("BKL-052 diferencia origen SIMULATOR y audita sus eventos", () => {
     ["MANUAL_REGISTERED", "MANUAL_DISPATCH", "MANUAL_DELIVERY"];
   assert.throws(() => validateContract(noAudit),
     /BKL-052: la auditoría diferencia eventos de simulación/);
+});
+
+test("BKL-050 protege reseñas, estado de entrega y evita IDs en el body", () => {
+  const exposed = clone();
+  delete exposed.paths["/api/reviews/products/{productId}"].post.security;
+  assert.throws(() => validateContract(exposed), /BKL-050: reseñas siempre requieren token CLIENT/);
+  const forged = clone();
+  forged.components.schemas.CreateProductReview.properties.userId =
+    {type:"integer",format:"int64"};
+  assert.throws(() => validateContract(forged), /BKL-050: no aceptar userId/);
+  const badReason = clone();
+  badReason.components.schemas.ReviewEligibility.properties.reason.enum.push("SIMULATED_DELIVERY");
+  assert.throws(() => validateContract(badReason), /BKL-050: estados de elegibilidad acotados/);
 });
