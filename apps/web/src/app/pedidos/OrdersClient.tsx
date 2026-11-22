@@ -4,6 +4,7 @@ import Link from "next/link";
 import ShippingTrackingPanel from "./ShippingTrackingPanel";
 import OrderNotificationsPanel from "./OrderNotificationsPanel";
 import { useCallback, useRef, useState } from "react";
+import {filterLoadedOrders, loadedOrderCounts, type OrdersViewFilter} from "@/lib/order-list-view";
 import { isSafeApiOrigin } from "@/lib/payment-result";
 import {
   ACTOR_COPY, REASON_COPY, STATUS_COPY, formatCrc, formatOrderDate,
@@ -84,37 +85,42 @@ function DetailView({
   const address = order.shippingAddress;
   return (
     <article className="orders-detail" aria-labelledby="order-detail-heading">
+
       <div className="orders-detail__head">
         <div>
-          <p className="eyebrow">Detalle histórico</p>
+          <p className="eyebrow">Detalle de tu compra</p>
           <h2 id="order-detail-heading">Pedido #{order.id}</h2>
         </div>
         <StatusTag status={order.status} />
       </div>
-      <p>{STATUS_COPY[order.status].description}</p>
-      <p className="orders-muted">Creado: {formatOrderDate(order.createdAt)}</p>
+      <p className="orders-detail__status-copy">{STATUS_COPY[order.status].description}</p>
+      <div className="orders-detail__facts">
+        <div>
+          <span className="orders-detail__fact-label">Fecha del pedido</span>
+          <strong>{formatOrderDate(order.createdAt)}</strong>
+        </div>
+        <div>
+          <span className="orders-detail__fact-label">Importe registrado</span>
+          <strong>{formatCrc(order.totals.totalCrc)}</strong>
+        </div>
+      </div>
 
       <h3>Productos del pedido</h3>
-      <div className="orders-table-scroll">
-        <table className="orders-table">
-          <thead><tr>
-            <th scope="col">Producto</th>
-            <th scope="col">Cantidad</th>
-            <th scope="col">Precio unitario</th>
-            <th scope="col">Subtotal</th>
-          </tr></thead>
-          <tbody>
-            {order.items.map((item, i) => (
-              <tr key={item.productId + "-" + i}>
-                <th scope="row">{item.name}</th>
-                <td>{item.quantity}</td>
-                <td>{formatCrc(item.unitPriceCrc)}</td>
-                <td>{formatCrc(item.lineTotalCrc)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <p className="orders-muted orders-detail__section-help">
+        Artículos y precios históricos de esta compra.
+      </p>
+      <ul className="orders-products">
+        {order.items.map((item, i) => (
+          <li key={item.productId + "-" + i} className="orders-product">
+            <span className="orders-product__icon" aria-hidden="true">▣</span>
+            <div className="orders-product__main">
+              <strong>{item.name}</strong>
+              <span className="orders-muted">Cantidad: {item.quantity} · Precio unitario: {formatCrc(item.unitPriceCrc)}</span>
+            </div>
+            <strong className="orders-product__amount">{formatCrc(item.lineTotalCrc)}</strong>
+          </li>
+        ))}
+      </ul>
 
       <h3>Resumen del pedido</h3>
       <dl className="orders-totals">
@@ -137,6 +143,7 @@ function DetailView({
       <OrderNotificationsPanel orderId={order.id} getToken={getToken} />
       <ShippingTrackingPanel orderId={order.id} getToken={getToken} />
       <h3>Historial de estados</h3>
+      <p className="orders-muted orders-detail__section-help">Así ha cambiado el estado del pedido, según la API.</p>
       {history.length === 0 ? (
         <p className="orders-muted">
           Todavía no existen cambios de estado registrados en este pedido.
