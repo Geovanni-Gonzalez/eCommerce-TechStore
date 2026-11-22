@@ -61,6 +61,7 @@ public class ApiSecurityConfig {
                                 "/api/orders", "/api/orders/*",
                                 "/api/orders/*/history").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/*/shipping").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/cancel").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/payment-sessions")
                             .hasRole("CLIENT")

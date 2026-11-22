@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -32,10 +33,11 @@ public class ShippingAdminExceptionHandler {
     }
 
     @ExceptionHandler({ShippingOrderNotConfirmedException.class,
+            ShippingInvalidTransitionException.class,
             DataIntegrityViolationException.class})
     ResponseEntity<ProblemDetail> conflict() {
         return problem(HttpStatus.CONFLICT,"SHIPMENT_NOT_ALLOWED",
-                "Solo un pedido confirmado admite registro logístico manual");
+                "El pedido o transición logística no admite esta operación");
     }
 
     @ExceptionHandler(ShippingGatewayUnavailableException.class)

@@ -8,4 +8,5 @@ package com.techstore.shipping;
  */
 public interface ShippingGateway {
     ShippingRegistration register(ShippingRegistrationCommand command);
+    ShipmentRecord advance(ShippingTransitionCommand command);
 }
