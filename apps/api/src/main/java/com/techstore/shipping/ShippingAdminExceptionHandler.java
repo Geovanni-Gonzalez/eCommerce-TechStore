@@ -33,16 +33,17 @@ public class ShippingAdminExceptionHandler {
 
     @ExceptionHandler({ShippingOrderNotConfirmedException.class,
             ShippingInvalidTransitionException.class,
+            ShippingProviderConflictException.class,
             DataIntegrityViolationException.class})
     ResponseEntity<ProblemDetail> conflict() {
         return problem(HttpStatus.CONFLICT,"SHIPMENT_NOT_ALLOWED",
-                "El pedido o transición logística no admite esta operación");
+                "Transición no permitida o registro asociado a otro modo logístico");
     }
 
     @ExceptionHandler(ShippingGatewayUnavailableException.class)
     ResponseEntity<ProblemDetail> unavailable() {
-        return problem(HttpStatus.SERVICE_UNAVAILABLE,"SHIPPING_DISABLED",
-                "El registro logístico está deshabilitado");
+        return problem(HttpStatus.SERVICE_UNAVAILABLE,"SHIPPING_UNAVAILABLE",
+                "El servicio logístico no está disponible en el modo configurado");
     }
 
     private static ResponseEntity<ProblemDetail> problem(

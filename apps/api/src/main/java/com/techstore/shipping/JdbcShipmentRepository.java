@@ -66,28 +66,48 @@ public class JdbcShipmentRepository {
                 rs.getObject("changed_at",OffsetDateTime.class)),orderId);
     }
 
-    /** Bloqueo de orders adquirido por ShippingAdminService antes de este UPDATE. */
+    /** Servicio adquirió primero FOR UPDATE en orders para serializar. */
     public ShipmentRecord advanceManual(ShippingTransitionCommand command) {
+        return advanceForMethod(command, "MANUAL");
+    }
+
+    public ShipmentRecord advanceSimulated(ShippingTransitionCommand command) {
+        return advanceForMethod(command, "SIMULATOR");
+    }
+
+    private ShipmentRecord advanceForMethod(
+            ShippingTransitionCommand command, String method) {
         int changed=jdbc.update("""
                 UPDATE shipments SET status=?,last_changed_by_user_id=?
-                WHERE order_id=? AND status=?
+                WHERE order_id=? AND status=? AND fulfillment_method=?
                 """,command.toStatus().name(),command.actorUserId(),
-                command.orderId(),command.fromStatus().name());
+                command.orderId(),command.fromStatus().name(),method);
         if(changed!=1)throw new ShippingInvalidTransitionException();
         return findByOrderId(command.orderId())
                 .orElseThrow(ShippingNotFoundException::new);
     }
 
     public ShippingRegistration registerManual(ShippingRegistrationCommand command) {
+        return registerForMethod(command, "MANUAL");
+    }
+
+    public ShippingRegistration registerSimulated(ShippingRegistrationCommand command) {
+        return registerForMethod(command, "SIMULATOR");
+    }
+
+    private ShippingRegistration registerForMethod(
+            ShippingRegistrationCommand command, String method) {
         boolean created = !jdbc.query("""
-                INSERT INTO shipments (order_id,opened_by_user_id)
-                VALUES (?,?)
+                INSERT INTO shipments (order_id,opened_by_user_id,fulfillment_method)
+                VALUES (?,?,?)
                 ON CONFLICT (order_id) DO NOTHING
                 RETURNING id
                 """, (rs,row)->rs.getLong("id"),
-                command.orderId(),command.actorUserId()).isEmpty();
+                command.orderId(),command.actorUserId(),method).isEmpty();
         ShipmentRecord record = findByOrderId(command.orderId())
                 .orElseThrow(IllegalStateException::new);
+        if(!record.fulfillmentMethod().equals(method))
+            throw new ShippingProviderConflictException();
         return new ShippingRegistration(record,created);
     }
 

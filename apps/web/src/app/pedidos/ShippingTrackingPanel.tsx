@@ -2,7 +2,8 @@
 
 import {useEffect,useState} from "react";
 import {
-  getCustomerShippingTracking,SHIPPING_COPY,SHIPPING_EVENT_COPY,
+  getCustomerShippingTracking,SHIPPING_COPY,SHIPPING_SIMULATOR_COPY,
+  SHIPPING_EVENT_COPY,
   type ShippingTracking,
 } from "@/lib/shipping-tracking";
 import {formatOrderDate} from "@/lib/order-history";
@@ -36,13 +37,18 @@ export default function ShippingTrackingPanel({
   return <section className="orders-shipping" aria-label="Seguimiento de envío">
     <h3>Seguimiento de entrega</h3>
     <p className="orders-muted">
-      Los hitos son registros manuales de TechStore, no verificaciones de
-      una empresa transportista. No se ofrecen guías ni ubicaciones en tiempo real.
+      El seguimiento identifica el modo MANUAL o SIMULATOR.
+      No hay guías ni ubicaciones en tiempo real; los eventos simulados
+      no acreditan despacho ni entrega física.
     </p>
     {error&&<p className="orders-error" role="alert">{error}</p>}
     {!result&&!error&&<p role="status">Consultando seguimiento del pedido…</p>}
     {result&&<>
-      <p><strong>{SHIPPING_COPY[result.status]}</strong></p>
+      {result.fulfillmentMethod==="SIMULATOR"&&
+        <p role="status"><strong>Simulación de logística: no se ha transportado ningún paquete.</strong></p>}
+      <p><strong>{result.fulfillmentMethod==="SIMULATOR"
+        ?SHIPPING_SIMULATOR_COPY[result.status]
+        :SHIPPING_COPY[result.status]}</strong></p>
       {result.status==="NOT_REGISTERED"
         ?<p className="orders-muted">
           Todavía no existe una tarea de preparación de envío para este pedido.

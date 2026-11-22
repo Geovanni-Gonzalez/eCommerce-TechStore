@@ -3612,7 +3612,7 @@
         "x-implementation-status": "implemented",
         "operationId": "getAdminManualShipment",
         "summary": "Consultar registro de envío manual por pedido",
-        "description": "Solo ADMIN, incluso si el adaptador está DISABLED. Retorna 404 si no existe. No revela dirección, guía ni seguimiento ficticio.",
+        "description": "Consulta solo ADMIN; fulfillmentMethod identifica MANUAL o SIMULATOR sin divulgar PII ni guía.",
         "responses": {
           "200": {
             "description": "Tarea logística manual existente",
@@ -3690,7 +3690,7 @@
         "x-implementation-status": "implemented",
         "operationId": "registerAdminManualShipment",
         "summary": "Crear tarea de gestión logística para un pedido CONFIRMED",
-        "description": "Solo ADMIN; no acepta body, dirección, importe ni transportista. Requiere CONFIRMED bajo lock del pedido y TECHSTORE_SHIPPING_PROVIDER=MANUAL. Primer registro devuelve 201; reintento 200 sin duplicar. No implica envío ni modifica estado de pago, orden o stock.",
+        "description": "Solo ADMIN y pedido CONFIRMED. Proveedor DISABLED predeterminado; MANUAL registra tarea física supervisada; SIMULATOR requiere opt-in y marca cada evento ficticio. Retorna 503 sin mutaciones cuando simulador está UNAVAILABLE. Reintentos idempotentes y cambio de modo rechazado 409.",
         "responses": {
           "200": {
             "description": "Ya existía una tarea manual: repetición idempotente",
@@ -3788,7 +3788,7 @@
         "x-implementation-status": "implemented",
         "operationId": "getMyOrderShippingTracking",
         "summary": "Consultar hitos logísticos manuales del pedido propio",
-        "description": "ROLE_CLIENT, filtrado por user_id en SQL; ajeno e inexistente devuelven 404 indistinguible. NOT_REGISTERED indica que no se ha creado tarea de envío. Sin datos de ADMIN, proveedor ni PII.",
+        "description": "Solo propietario CLIENT mediante WHERE orders.user_id. Incluye fulfillmentMethod para distinguir datos reales administrados de SIMULATOR; no muestra actor, PII ni guía. 404 idéntico para pedido inexistente o ajeno.",
         "parameters": [
           {
             "name": "id",
@@ -3953,7 +3953,7 @@
         ],
         "operationId": "advanceAdminManualShipment",
         "summary": "Registrar transición logística manual bajo confirmación ADMIN",
-        "description": "PENDING_MANUAL a IN_TRANSIT a DELIVERED, sin saltos ni regresión. Solo pedido CONFIRMED, actor del Bearer. Los hitos son declarados, no probados por operador externo.",
+        "description": "Avanza una etapa bajo lock ADMIN. MANUAL registra hitos constatados por operador; SIMULATOR genera hitos ficticios solo con AVAILABLE explícito, sin transporte real. UNAVAILABLE -> 503 sin cambios en envíos, pagos, pedidos o stock. Cambiar proveedor con registro existente -> 409.",
         "requestBody": {
           "required": true,
           "content": {
@@ -5788,7 +5788,7 @@
       },
       "ShipmentRecord": {
         "type": "object",
-        "description": "Registro mínimo de tarea logística; NO hay número de guía, proveedor, ETA, envío realizado ni datos personales.",
+        "description": "Registro de gestión logística: MANUAL o SIMULATOR. No acredita despacho ni entrega de transportista, no incluye guía ni PII.",
         "additionalProperties": false,
         "required": [
           "id",
@@ -5812,8 +5812,10 @@
           "fulfillmentMethod": {
             "type": "string",
             "enum": [
-              "MANUAL"
-            ]
+              "MANUAL",
+              "SIMULATOR"
+            ],
+            "description": "Fuente inmutable del registro; SIMULATOR indica eventos puramente ficticios."
           },
           "status": {
             "type": "string",
@@ -5822,7 +5824,7 @@
               "IN_TRANSIT",
               "DELIVERED"
             ],
-            "description": "Hitos declarados manualmente por ADMIN, no verificados por transportista."
+            "description": "Estado administrativo o SIMULADO: el origen fulfillmentMethod aclara su significado."
           },
           "openedByUserId": {
             "type": "integer",
@@ -5885,7 +5887,10 @@
             "enum": [
               "MANUAL_REGISTERED",
               "MANUAL_DISPATCH",
-              "MANUAL_DELIVERY"
+              "MANUAL_DELIVERY",
+              "SIMULATOR_REGISTERED",
+              "SIMULATOR_DISPATCH",
+              "SIMULATOR_DELIVERY"
             ]
           },
           "changedAt": {
@@ -5916,7 +5921,10 @@
             "enum": [
               "MANUAL_REGISTERED",
               "MANUAL_DISPATCH",
-              "MANUAL_DELIVERY"
+              "MANUAL_DELIVERY",
+              "SIMULATOR_REGISTERED",
+              "SIMULATOR_DISPATCH",
+              "SIMULATOR_DELIVERY"
             ]
           },
           "changedAt": {
@@ -5928,10 +5936,11 @@
       "ShippingTrackingView": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Vista de seguimiento del CLIENT propietario, sin identidad de actor ni datos de transporte falsos.",
+        "description": "Vista solo para propietario CLIENT, distingue MANUAL/SIMULATOR y nunca acredita un transporte físico cuando el origen es SIMULATOR.",
         "required": [
           "orderId",
           "status",
+          "fulfillmentMethod",
           "registeredAt",
           "events"
         ],
@@ -5961,6 +5970,15 @@
               "$ref": "#/components/schemas/ShippingCustomerEvent"
             },
             "maxItems": 3
+          },
+          "fulfillmentMethod": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SIMULATOR"
+            ],
+            "nullable": true,
+            "description": "null solo si status=NOT_REGISTERED. Fuente inmutable, nunca elegida por el cliente."
           }
         }
       },

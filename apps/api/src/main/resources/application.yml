@@ -30,7 +30,13 @@ techstore:
     # BKL-047: DISABLED por defecto, no se simulan entregas reales.
     # MANUAL permite únicamente crear una tarea logística ADMIN (PENDING_MANUAL).
     # No hay integración externa ni números de guía inventados.
+    # SIMULATOR solo para demostración y nunca acredita entrega física.
     provider: ${TECHSTORE_SHIPPING_PROVIDER:DISABLED}
+    simulator:
+      enabled: ${TECHSTORE_SHIPPING_SIMULATOR_ENABLED:false}
+      # AVAILABLE aplica transiciones SIMULADAS; UNAVAILABLE devuelve 503 sin
+      # tocar pagos, pedidos, reservas, registros ni auditoría logística.
+      outcome: ${TECHSTORE_SHIPPING_SIMULATOR_OUTCOME:UNAVAILABLE}
   payment:
     # DISABLED por defecto. SANDBOX sin red requiere opt-in explícito.
     provider: ${TECHSTORE_PAYMENT_PROVIDER:DISABLED}

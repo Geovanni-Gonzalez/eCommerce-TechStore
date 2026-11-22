@@ -19,11 +19,11 @@ public class ShippingCustomerService {
             throw new ShippingNotFoundException();
         var record=shipments.findByOrderId(orderId);
         if(record.isEmpty())
-            return new ShippingTrackingView(orderId,"NOT_REGISTERED",null,List.of());
+            return new ShippingTrackingView(orderId,"NOT_REGISTERED",null,null,List.of());
         var events=shipments.findHistoryByOrderId(orderId).stream()
                 .map(e->new ShippingCustomerEvent(
                         e.toStatus(),e.reason(),e.changedAt())).toList();
         return new ShippingTrackingView(orderId,record.get().status().name(),
-                record.get().registeredAt(),events);
+                record.get().fulfillmentMethod(),record.get().registeredAt(),events);
     }
 }

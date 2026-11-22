@@ -43,6 +43,9 @@ public class ShippingAdminService {
             throw new ShippingOrderNotConfirmedException();
         ShipmentRecord record=repository.findByOrderId(orderId)
                 .orElseThrow(ShippingNotFoundException::new);
+        // Incluso el retry sin cambio valida el adaptador activo: cambiar
+        // MANUAL <-> SIMULATOR nunca permite reclamar hitos de otra fuente.
+        gateway.verifyExisting(record);
         if(record.status()==target)return record; // reintento sin duplicar hito
         return gateway.advance(new ShippingTransitionCommand(
                 orderId,actorId,record.status(),target));

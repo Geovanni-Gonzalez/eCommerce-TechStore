@@ -289,6 +289,20 @@ export function validateContract(doc) {
     assert.ok(!params.some(p => p.name === "userId" || p.name === "ownerUserId"),
       "BKL-042: identidad no puede provenir del navegador");
   }
+  // BKL-052: nunca representar un registro SIMULATOR como entrega real.
+  const shipment = doc.components.schemas.ShipmentRecord;
+  const tracking = doc.components.schemas.ShippingTrackingView;
+  assert.deepEqual(shipment.properties.fulfillmentMethod.enum,
+    ["MANUAL", "SIMULATOR"], "BKL-052: métodos logísticos explícitos");
+  assert.deepEqual(tracking.properties.fulfillmentMethod.enum,
+    ["MANUAL", "SIMULATOR"], "BKL-052: cliente debe identificar simulación");
+  assert.ok(tracking.required.includes("fulfillmentMethod"),
+    "BKL-052: el origen logístico es obligatorio");
+  const reasons = doc.components.schemas.ShipmentHistoryEntry.properties.reason.enum;
+  assert.ok(reasons.includes("SIMULATOR_REGISTERED")
+    && reasons.includes("SIMULATOR_DISPATCH")
+    && reasons.includes("SIMULATOR_DELIVERY"),
+    "BKL-052: la auditoría diferencia eventos de simulación");
   assert.equal(proposedCount, 0, "BKL-042: ya no quedan rutas pendientes");
   for (const route of ["/api/products", "/api/products/{id}"]) {
     assert.equal(doc.paths[route].get["x-implementation-status"], "implemented",
