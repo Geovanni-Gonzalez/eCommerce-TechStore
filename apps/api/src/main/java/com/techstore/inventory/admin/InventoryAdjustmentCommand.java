@@ -41,17 +41,22 @@ public record InventoryAdjustmentCommand(
                     || kindText.equals("ADJUSTMENT_OUT"))) {
             throw new IllegalArgumentException("kind debe ser ADJUSTMENT_IN o ADJUSTMENT_OUT");
         }
-        if (!(body.get("quantity") instanceof Number rawQuantity)) {
+        if (!(body.get("quantity") instanceof Integer
+                || body.get("quantity") instanceof Long
+                || body.get("quantity") instanceof java.math.BigInteger)) {
             throw new IllegalArgumentException("quantity debe ser entero");
         }
         int quantity;
         try {
-            quantity = new BigDecimal(rawQuantity.toString()).intValueExact();
+            quantity = new BigDecimal(body.get("quantity").toString()).intValueExact();
         } catch (NumberFormatException | ArithmeticException ex) {
             throw new IllegalArgumentException("quantity debe ser entero", ex);
         }
         if (!(body.get("reason") instanceof String rawReason)) {
             throw new IllegalArgumentException("reason debe ser texto");
+        }
+        if (rawReason.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("reason contiene caracteres de control");
         }
         String reason = rawReason.strip();
         // Rechazar cadenas con whitespace de control, incluso cuando son externas.
