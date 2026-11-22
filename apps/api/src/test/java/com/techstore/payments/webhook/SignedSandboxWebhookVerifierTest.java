@@ -107,9 +107,9 @@ class SignedSandboxWebhookVerifierTest {
     void identicalJsonMeaningWithChangedBytesDoesNotReuseSignature() throws Exception {
         var verifier = new SignedSandboxWebhookVerifier(SECRET, CLOCK);
         long epoch = CLOCK.instant().getEpochSecond();
-        byte[] compact = "{\\\"eventId\\\":\\\"event-0001\\\"}"
+        byte[] compact = "{\"eventId\":\"event-0001\"}"
                 .getBytes(StandardCharsets.UTF_8);
-        byte[] withWhitespace = " {\\\"eventId\\\": \\\"event-0001\\\"} "
+        byte[] withWhitespace = " {\"eventId\": \"event-0001\"} "
                 .getBytes(StandardCharsets.UTF_8);
         verifier.verify(compact, String.valueOf(epoch), sign(epoch, compact));
         assertThrows(WebhookAuthenticationException.class,
