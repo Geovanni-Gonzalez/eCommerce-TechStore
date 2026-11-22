@@ -18,7 +18,7 @@
     },
     {
       "name": "Catalog",
-      "description": "Catálogo público planificado"
+      "description": "Catálogo público, búsqueda y filtros por facetas"
     },
     {
       "name": "Auth",
@@ -74,7 +74,7 @@
           "Catalog"
         ],
         "operationId": "listProducts",
-        "summary": "Listar productos activos",
+        "summary": "Buscar productos activos con filtros combinables y paginación",
         "responses": {
           "200": {
             "description": "Página de productos",
@@ -130,9 +130,63 @@
               "default": 12
             },
             "description": "Cantidad de registros por página"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "Palabras clave en nombre, descripción o SKU mediante Full Text Search simple"
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "ID de la categoría"
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Marca exacta, sin distinción de mayúsculas/minúsculas"
+          },
+          {
+            "name": "minPriceCrc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "multipleOf": 0.01
+            },
+            "description": "Precio mínimo inclusive (CRC)"
+          },
+          {
+            "name": "maxPriceCrc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "multipleOf": 0.01
+            },
+            "description": "Precio máximo inclusive (CRC); debe ser >= minPriceCrc"
           }
         ],
-        "x-implementation-status": "implemented"
+        "x-implementation-status": "implemented",
+        "description": "BKL-020/021: coincidencia FTS de nombre, descripción y SKU (case-insensitive), categoría, marca exacta case-insensitive, mínimo y máximo CRC; solo productos activos, orden estable por ID. Los filtros se ejecutan mediante SQL parametrizado e índices parciales. Los registros históricos pueden no tener marca."
       }
     },
     "/api/products/{id}": {
@@ -2335,6 +2389,39 @@
         "x-implementation-status": "implemented",
         "description": "Requiere ROLE_ADMIN. Devuelve ownerUserId e información histórica del pedido, no credenciales."
       }
+    },
+    "/api/products/filters": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "operationId": "listProductFilterOptions",
+        "summary": "Listar categorías y marcas disponibles en productos activos",
+        "description": "BKL-022: facetas globales del catálogo activo, sin datos del usuario ni precios inventados.",
+        "responses": {
+          "200": {
+            "description": "Opciones de filtros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductFilterOptions"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error del servidor",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -2446,6 +2533,11 @@
           "active": {
             "type": "boolean",
             "description": "El catálogo público solo devuelve productos activos"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Marca opcional del producto; no presente en datos históricos hasta que se complete"
           }
         },
         "required": [
@@ -3612,6 +3704,31 @@
           "changedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ProductFilterOptions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "categories",
+          "brands"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "description": "Categorías con al menos un producto activo"
+          },
+          "brands": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Marcas de productos activos disponibles"
           }
         }
       }

@@ -159,3 +159,36 @@
   .catalog-product { grid-template-columns: 1fr; }
   .catalog-intro h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
 }
+
+/* BKL-022 — búsqueda y filtros visibles, accesibles y adaptables. */
+.catalog-filters {
+  background: #fff; border: 1px solid #d5dfe9; border-radius: .85rem;
+  padding: clamp(1rem, 3vw, 1.5rem); margin-bottom: 1.2rem;
+}
+.catalog-filters__row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .8rem 1rem; align-items: end;
+}
+.catalog-filter-field { display: grid; gap: .4rem; min-width: 0; }
+.catalog-filter-field label { font-size: .91rem; font-weight: 700; }
+.catalog-filter-field input, .catalog-filter-field select {
+  width: 100%; min-height: 2.75rem; padding: .55rem .65rem;
+  border: 1px solid #8495a6; border-radius: .5rem; background: #fff;
+  color: #1c2d40; font: inherit;
+}
+.catalog-filter-field input:focus-visible,
+.catalog-filter-field select:focus-visible,
+.catalog-clear-link:focus-visible { outline: 3px solid #d87018; outline-offset: 3px; }
+.catalog-filters__actions { display: flex; align-items: center; flex-wrap: wrap;
+  gap: 1rem; margin-top: 1.1rem; }
+.catalog-clear-link { font-weight: 700; padding: .65rem .3rem; }
+.catalog-filter-error { color: #902f22; border-left: 4px solid #a84b3d;
+  background: #fff3ef; padding: .65rem .9rem; border-radius: .35rem; }
+.catalog-filters__hint { font-size: .88rem; color: #52677a; margin: .65rem 0 0; }
+.catalog-card__brand { margin: 0 0 .4rem; font-size: .88rem; color: #52677a; }
+@media (max-width: 760px) {
+  .catalog-filters__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 460px) {
+  .catalog-filters__row { grid-template-columns: 1fr; }
+}

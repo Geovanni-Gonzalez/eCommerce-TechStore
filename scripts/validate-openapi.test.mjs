@@ -8,7 +8,7 @@ const clone = () => structuredClone(original);
 
 test("el contrato actual es consistente", () => {
   const result = validateContract(original);
-  assert.equal(result.operationCount, 31);
+  assert.equal(result.operationCount, 32);
   assert.equal(result.proposedCount, 0);
 });
 
