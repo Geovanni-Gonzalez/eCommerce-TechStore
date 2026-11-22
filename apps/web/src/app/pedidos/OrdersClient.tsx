@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ShippingTrackingPanel from "./ShippingTrackingPanel";
 import { useRef, useState } from "react";
 import { isSafeApiOrigin } from "@/lib/payment-result";
 import {
@@ -74,9 +75,9 @@ function StatusTag({ status }: { status: OrderStatus }) {
 }
 
 function DetailView({
-  order, history,
+  order, history, token,
 }: {
-  order: OrderDetail; history: OrderHistoryEntry[];
+  order: OrderDetail; history: OrderHistoryEntry[]; token:string;
 }) {
   const address = order.shippingAddress;
   return (
@@ -131,6 +132,7 @@ function DetailView({
         <span>Teléfono: {address.phone}</span>
       </address>
 
+      <ShippingTrackingPanel orderId={order.id} token={token} />
       <h3>Historial de estados</h3>
       {history.length === 0 ? (
         <p className="orders-muted">
@@ -510,7 +512,8 @@ export default function OrdersClient() {
                 </div>
               )}
               {selectedId !== null && detail !== null && !detailBusy && (
-                <DetailView order={detail} history={timeline} />
+                <DetailView order={detail} history={timeline}
+                  token={session.current??""} />
               )}
             </section>
           </div>
