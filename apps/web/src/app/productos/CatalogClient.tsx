@@ -140,7 +140,8 @@ export default function CatalogClient() {
 
   if(!filters) return (
     <div className="catalog-feedback" role="alert">
-      <h2>Filtros no válidos</h2>
+      <h2>{searchParams.has("page") && !/^(0|[1-9][0-9]*)$/.test(searchParams.get("page") ?? "")
+        ? "Página no válida" : "Filtros no válidos"}</h2>
       <p>Revisa la página, la categoría y el rango de precios solicitado.</p>
       <Link href="/productos">Restablecer catálogo</Link>
     </div>
