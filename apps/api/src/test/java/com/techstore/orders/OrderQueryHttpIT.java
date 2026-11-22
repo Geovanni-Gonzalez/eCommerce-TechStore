@@ -300,11 +300,11 @@ class OrderQueryHttpIT {
         mvc.perform(get(eligibility).header("Authorization", bearer(admin)))
                 .andExpect(status().isForbidden());
         mvc.perform(post(review).contentType(MediaType.APPLICATION_JSON)
-                .content("{\\"rating\\":5,\\"comment\\":\\"Excelente producto\\"}"))
+                .content("{\"rating\":5,\"comment\":\"Excelente producto\"}"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(post(review).contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", bearer(admin))
-                .content("{\\"rating\\":5,\\"comment\\":\\"Excelente producto\\"}"))
+                .content("{\"rating\":5,\"comment\":\"Excelente producto\"}"))
                 .andExpect(status().isForbidden());
 
         // El listado público no incorpora el acceso privado del cliente.
